@@ -3,7 +3,7 @@ import ProjecaoSaldo from "@/components/financeiro/ProjecaoSaldo";
 import { query } from "@/lib/db";
 import { CartaoSaldo } from "@/components/financeiro/CartaoSaldo";
 import type { ContaComSaldo } from "@/types/financeiro";
-
+export const dynamic = 'force-dynamic';
 interface ContaComSaldoEFluxo extends ContaComSaldo {
   fluxo_caixa: boolean;
 }

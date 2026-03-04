@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import "./globals.css";
 import Sidebar from "@/components/financeiro/Sidebar";
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   title: "JS Financeiro",

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback, memo } from "react";
 import { CheckCircle2, AlertTriangle, RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
-
+export const dynamic = 'force-dynamic';
 interface Conta {
   id: number;
   nome: string;

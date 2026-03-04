@@ -2,6 +2,7 @@
 import { useEffect, useState, useCallback, memo } from "react";
 import { Plus, Pencil, Check, X, CreditCard, Trash2, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { TIPO_DESPESA_LABEL, TIPO_DESPESA_COR, type TipoDespesa } from "@/types/financeiro";
+export const dynamic = 'force-dynamic';
 
 function parseBR(v: string): number {
   if (v.includes(",")) return parseFloat(v.replace(/\./g, "").replace(",", "."));
