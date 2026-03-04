@@ -39,7 +39,7 @@ export default function ProjecaoSaldo() {
 
   const carregar = useCallback(async () => {
     setLoading(true);
-    const res = await fetch(`/api/projecao?base=${base}`);
+    const res = await fetch(`/api/projecao?base=${base}`, { cache: 'no-store' });
     setData(await res.json());
     setLoading(false);
   }, [base]);

@@ -48,7 +48,7 @@ export default function GraficoProjecaoDiaria({ base }: Props) {
 
   const carregar = useCallback(async () => {
     setLoading(true);
-    const res = await fetch(`/api/projecao?base=${base}`);
+    const res = await fetch(`/api/projecao?base=${base}`, { cache: 'no-store' });
     const json = await res.json();
     setData(json);
     setLoading(false);
