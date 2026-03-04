@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import GraficoProjecaoDiaria from "./GraficoProjecaoDiaria";
 
 function fmt(v: number) {
   return v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
@@ -46,6 +47,7 @@ export default function ProjecaoSaldo() {
   useEffect(() => { carregar(); }, [carregar]);
 
   return (
+    <div className="flex flex-col gap-4">
     <div className="rounded-xl border p-5 flex flex-col gap-4"
       style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
 
@@ -172,6 +174,8 @@ export default function ProjecaoSaldo() {
           </div>
         </>
       )}
+    </div>
+    <GraficoProjecaoDiaria base={base} />
     </div>
   );
 }
