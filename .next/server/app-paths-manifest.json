@@ -1,0 +1,9 @@
+{
+  "/dashboard/page": "app/dashboard/page.js",
+  "/api/receitas/route": "app/api/receitas/route.js",
+  "/api/contas/saldos/route": "app/api/contas/saldos/route.js",
+  "/contas/page": "app/contas/page.js",
+  "/pagamentos/page": "app/pagamentos/page.js",
+  "/api/pagamentos/route": "app/api/pagamentos/route.js",
+  "/api/projecao/route": "app/api/projecao/route.js"
+}
