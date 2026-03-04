@@ -33,7 +33,7 @@ const OPCOES = [
 ];
 
 export default function ProjecaoSaldo() {
-  const [base, setBase] = useState(3);
+  const [base, setBase] = useState(12);
   const [data, setData] = useState<ProjecaoData | null>(null);
   const [loading, setLoading] = useState(true);
 
