@@ -17,13 +17,15 @@ async function getDashboardData() {
   const saldoTotal = contasFluxo.reduce((acc, c) => acc + Number(c.saldo_atual), 0);
 
   const [pendente30] = await query<{ total: string }>(`
-    SELECT COALESCE(SUM(valor), 0) AS total
-    FROM privado.transacoes
-    WHERE tipo = 'despesa'
-      AND data_pagamento IS NULL
-      AND DATE_TRUNC('month', data_vencimento) = DATE_TRUNC('month', CURRENT_DATE)
-  `);
-
+  SELECT COALESCE(SUM(r.valor_padrao), 0) AS total
+  FROM privado.recorrentes r
+  LEFT JOIN privado.transacoes t 
+    ON t.recorrente_id = r.id 
+    AND DATE_TRUNC('month', t.data_pagamento) = DATE_TRUNC('month', CURRENT_DATE)
+  WHERE r.ativo = TRUE
+    AND DATE_TRUNC('month', r.data_vencimento) = DATE_TRUNC('month', CURRENT_DATE)
+    AND t.id IS NULL
+`);
   const [pagoMes] = await query<{ total: string }>(`
     SELECT COALESCE(SUM(valor), 0) AS total
     FROM privado.transacoes
@@ -78,10 +80,10 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <CartaoSaldo titulo="Saldo Fluxo"     valor={saldoTotal}    descricao="Contas de fluxo de caixa"    cor="azul"     />
-        <CartaoSaldo titulo="Receitas do Mês" valor={receitasMes}   descricao="Recebimentos IPTV"     cor="verde"    />
-        <CartaoSaldo titulo="Pago no Mês"     valor={totalPago}     descricao="Despesas efetivadas"         cor="vermelho" />
-        <CartaoSaldo titulo="Pendente (mês)"  valor={totalPendente} descricao="Pendente no mês atual"  cor="amarelo"  />
+        <CartaoSaldo titulo="Saldo Fluxo" valor={saldoTotal} descricao="Contas de fluxo de caixa" cor="azul" />
+        <CartaoSaldo titulo="Receitas do Mês" valor={receitasMes} descricao="Recebimentos IPTV" cor="verde" />
+        <CartaoSaldo titulo="Pago no Mês" valor={totalPago} descricao="Despesas efetivadas" cor="vermelho" />
+        <CartaoSaldo titulo="Pendente (mês)" valor={totalPendente} descricao="Pendente no mês atual" cor="amarelo" />
       </div>
 
       <ProjecaoSaldo />

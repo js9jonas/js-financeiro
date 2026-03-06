@@ -74,12 +74,24 @@ export async function GET(req: NextRequest) {
     `, [base]);
 
     const [pendenteMesRow] = await query<{ total: string }>(`
-      SELECT COALESCE(SUM(valor), 0) AS total
-      FROM privado.transacoes
-      WHERE tipo = 'despesa'
-        AND data_pagamento IS NULL
-        AND DATE_TRUNC('month', data_vencimento) = DATE_TRUNC('month', CURRENT_DATE)
-    `);
+  SELECT COALESCE(SUM(r.valor_padrao), 0) AS total
+  FROM privado.recorrentes r
+  LEFT JOIN privado.transacoes t 
+    ON t.recorrente_id = r.id 
+    AND DATE_TRUNC('month', t.data_pagamento) = DATE_TRUNC('month', CURRENT_DATE)
+  WHERE r.ativo = TRUE
+    AND DATE_TRUNC('month', r.data_vencimento) = DATE_TRUNC('month', CURRENT_DATE)
+    AND t.id IS NULL
+`);
+
+    const [pagoMesRow] = await query<{ total: string }>(`
+  SELECT COALESCE(SUM(t.valor), 0) AS total
+  FROM privado.transacoes t
+  WHERE t.tipo = 'despesa'
+    AND t.recorrente_id IS NOT NULL
+    AND t.data_pagamento IS NOT NULL
+    AND DATE_TRUNC('month', t.data_pagamento) = DATE_TRUNC('month', CURRENT_DATE)
+`);
 
     const [diasRow] = await query<{ dias_mes: string; dias_passados: string; dias_restantes: string }>(`
       SELECT
@@ -141,29 +153,30 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    const saldoAtual           = Number(saldoRow?.total ?? 0);
-    const receitaReal          = Number(receitaRealRow?.total ?? 0);
-    const receitaHoje          = Number(receitaHojeRow?.total ?? 0);
-    const mediaDiaHoje         = Number(mediaDiaHojeRow?.media ?? 0);
-    const pendenteMes          = Number(pendenteMesRow?.total ?? 0);
-    const diasRestantes        = Math.round(Number(diasRow?.dias_restantes ?? 0));
-
+    const saldoAtual = Number(saldoRow?.total ?? 0);
+    const receitaReal = Number(receitaRealRow?.total ?? 0);
+    const receitaHoje = Number(receitaHojeRow?.total ?? 0);
+    const mediaDiaHoje = Number(mediaDiaHojeRow?.media ?? 0);
+    const pendenteMes = Number(pendenteMesRow?.total ?? 0);
+    const diasRestantes = Math.round(Number(diasRow?.dias_restantes ?? 0));
+    const pagoMes = Number(pagoMesRow?.total ?? 0);
     const projecaoDiaria = diasRestantesRows.map(r => ({
       dia: r.dia,
       media: Number(r.media_dia),
     }));
     const totalProjetadoRestante = projecaoDiaria.reduce((acc, d) => acc + d.media, 0);
-    const receitaProjetadaMes    = receitaReal + totalProjetadoRestante;
-    const projecao               = saldoAtual + receitaProjetadaMes - pendenteMes;
-    const variacaoDia            = receitaHoje - mediaDiaHoje;
-    const variacaoDiaPct         = mediaDiaHoje > 0 ? (variacaoDia / mediaDiaHoje) * 100 : 0;
+    const receitaProjetadaMes = receitaReal + totalProjetadoRestante;
+    const projecao = saldoAtual + totalProjetadoRestante - pendenteMes;
+    const variacaoDia = receitaHoje - mediaDiaHoje;
+    const variacaoDiaPct = mediaDiaHoje > 0 ? (variacaoDia / mediaDiaHoje) * 100 : 0;
 
     return NextResponse.json({
       saldoAtual, receitaReal, receitaHoje, mediaDiaHoje,
       receitaProjetadaMes, totalProjetadoRestante, projecaoDiaria,
       graficoDias,
       diasMes, diasPassados, diasRestantes,
-      pendenteMes, projecao, variacaoDia, variacaoDiaPct, base,
+      pendenteMes, projecao, variacaoDia, variacaoDiaPct, base, pagoMes,
+      despesasMes: pendenteMes + pagoMes,
     });
   } catch (error) {
     console.error(error);

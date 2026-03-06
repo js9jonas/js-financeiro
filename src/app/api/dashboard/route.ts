@@ -20,18 +20,16 @@ export async function GET() {
     `);
 
     // Total pendente no mês — recorrentes ativos sem pagamento neste mês com vencimento no mês atual
-    const [pendenteMes] = await query<{ total: string }>(`
-      SELECT COALESCE(SUM(r.valor_padrao), 0) AS total
-      FROM privado.recorrentes r
-      WHERE r.ativo = TRUE
-        AND DATE_TRUNC('month', r.data_vencimento) = DATE_TRUNC('month', CURRENT_DATE)
-        AND NOT EXISTS (
-          SELECT 1 FROM privado.transacoes t
-          WHERE t.recorrente_id = r.id
-            AND t.data_pagamento IS NOT NULL
-            AND DATE_TRUNC('month', t.data_pagamento) = DATE_TRUNC('month', CURRENT_DATE)
-        )
-    `);
+    const [pendente30] = await query<{ total: string }>(`
+  SELECT COALESCE(SUM(r.valor_padrao), 0) AS total
+  FROM privado.recorrentes r
+  LEFT JOIN privado.transacoes t 
+    ON t.recorrente_id = r.id 
+    AND DATE_TRUNC('month', t.data_pagamento) = DATE_TRUNC('month', CURRENT_DATE)
+  WHERE r.ativo = TRUE
+    AND DATE_TRUNC('month', r.data_vencimento) = DATE_TRUNC('month', CURRENT_DATE)
+    AND t.id IS NULL
+`);
 
     // Receitas do mês (entradas manuais)
     const [receitasMes] = await query<{ total: string }>(`
@@ -56,10 +54,10 @@ export async function GET() {
     return NextResponse.json({
       saldo_total: saldoTotal,
       contas,
-      total_pendente_30dias: Number(pendenteMes.total),
+      total_pendente_30dias: Number(pendente30.total),
       total_pago_mes: Number(pagoMes.total),
       receitas_mes: Number(receitasMes.total) + Number(receitasIptv.total),
-      projecao_saldo: saldoTotal - Number(pendenteMes.total),
+      projecao_saldo: saldoTotal - Number(pendente30.total),
     });
   } catch (error) {
     console.error(error);
