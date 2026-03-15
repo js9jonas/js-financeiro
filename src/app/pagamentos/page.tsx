@@ -38,13 +38,13 @@ function isoParaBR(d: string | null): string {
 // Ex: digitar "2" no dia (se anterior já era 1) → dd completo → avança para mês
 function maskDate(raw: string, prev: string): string {
   const prevDigits = prev.replace(/\D/g, "");
-  const rawDigits  = raw.replace(/\D/g, "");
+  const rawDigits = raw.replace(/\D/g, "");
 
   // Backspace / apagando — retorna sem forçar máscara
   if (rawDigits.length < prevDigits.length) {
     if (rawDigits.length <= 2) return rawDigits;
-    if (rawDigits.length <= 4) return rawDigits.slice(0,2) + "/" + rawDigits.slice(2);
-    return rawDigits.slice(0,2) + "/" + rawDigits.slice(2,4) + "/" + rawDigits.slice(4,8);
+    if (rawDigits.length <= 4) return rawDigits.slice(0, 2) + "/" + rawDigits.slice(2);
+    return rawDigits.slice(0, 2) + "/" + rawDigits.slice(2, 4) + "/" + rawDigits.slice(4, 8);
   }
 
   let d = rawDigits.slice(0, 8); // máx 8 dígitos (ddmmaaaa)
@@ -65,11 +65,11 @@ function maskDate(raw: string, prev: string): string {
   if (d.length >= 3) {
     const m1 = parseInt(d[2]);
     // Se primeiro dígito do mês > 1, impossível ser mês válido → insere 0
-    if (m1 > 1) d = d.slice(0,2) + "0" + d.slice(2);
+    if (m1 > 1) d = d.slice(0, 2) + "0" + d.slice(2);
   }
   if (d.length >= 4) {
     const month = parseInt(d.slice(2, 4));
-    if (month > 12) d = d.slice(0,2) + "0" + d[2] + d.slice(4);
+    if (month > 12) d = d.slice(0, 2) + "0" + d[2] + d.slice(4);
   }
 
   // Monta string com separadores
@@ -82,7 +82,7 @@ function maskDate(raw: string, prev: string): string {
   return dd + "/" + mm + "/" + yy;
 }
 
-const MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+const MESES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
 interface Item {
   id: number;
@@ -357,8 +357,8 @@ const CardItem = memo(function CardItem({ item, contas, mes, ano, onPagar, onSal
 // ── Página ────────────────────────────────────────────────────────────────────
 export default function PagamentosPage() {
   const agora = new Date();
-  const [mes,  setMes]  = useState(agora.getMonth() + 1);
-  const [ano,  setAno]  = useState(agora.getFullYear());
+  const [mes, setMes] = useState(agora.getMonth() + 1);
+  const [ano, setAno] = useState(agora.getFullYear());
   const [itens, setItens] = useState<Item[]>([]);
   const [contas, setContas] = useState<Conta[]>([]);
   const [loading, setLoading] = useState(true);
@@ -386,7 +386,7 @@ export default function PagamentosPage() {
   function navMes(dir: number) {
     let m = mes + dir, a = ano;
     if (m > 12) { m = 1; a++; }
-    if (m < 1)  { m = 12; a--; }
+    if (m < 1) { m = 12; a--; }
     setMes(m); setAno(a);
   }
 
@@ -459,9 +459,9 @@ export default function PagamentosPage() {
 
   const filtrados = busca.trim()
     ? itens.filter(p =>
-        p.descricao.toLowerCase().includes(busca.toLowerCase()) ||
-        (p.observacao ?? "").toLowerCase().includes(busca.toLowerCase())
-      )
+      p.descricao.toLowerCase().includes(busca.toLowerCase()) ||
+      (p.observacao ?? "").toLowerCase().includes(busca.toLowerCase())
+    )
     : itens;
 
   const agora2 = new Date();
@@ -543,8 +543,10 @@ export default function PagamentosPage() {
           <p className="text-xl font-bold mt-1" style={{ color: "#ef4444" }}>R$ {fmt(total)}</p>
         </div>
         <div className="rounded-xl p-4 border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
-          <p className="text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Pago</p>
-          <p className="text-xl font-bold mt-1" style={{ color: "#22c55e" }}>R$ {fmt(totalPago)}</p>
+          <p className="text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Saldo Fluxo</p>
+          <p className="text-xl font-bold mt-1" style={{ color: "#0ea5e9" }}>
+            R$ {fmt(contas.filter(c => c.fluxo_caixa).reduce((acc, c) => acc + Number(c.saldo_atual), 0))}
+          </p>
         </div>
         <div className="rounded-xl p-4 border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
           <p className="text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Pendente</p>
