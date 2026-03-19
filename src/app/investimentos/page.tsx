@@ -3,7 +3,8 @@ import { useEffect, useState, useCallback } from "react";
 import {
   Plus, RefreshCw, TrendingUp, TrendingDown, ChevronDown, ChevronUp, X, Check,
 } from "lucide-react";
-
+import DividendosSection from "@/components/financeiro/DividendosSection";
+import RendaFixaSection from "@/components/financeiro/RendaFixaSection";
 export const dynamic = "force-dynamic";
 
 type Tipo = "acao" | "fii" | "etf" | "crypto" | "renda_fixa";
@@ -491,6 +492,12 @@ export default function InvestimentosPage() {
           </div>
         </div>
       )}
+      <div className="border-t pt-6" style={{ borderColor: "var(--border)" }}>
+        <RendaFixaSection />
+      </div>
+      <div className="border-t pt-6" style={{ borderColor: "var(--border)" }}>
+        <DividendosSection ativos={ativos} />
+      </div>
     </div>
   );
 }
