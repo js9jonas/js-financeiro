@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, CalendarClock, PlusCircle, Wallet, History } from "lucide-react";
 import clsx from "clsx";
+import { TrendingUp } from "lucide-react";
 
 const nav = [
   { href: "/dashboard",   label: "Dashboard",   icon: LayoutDashboard },
@@ -10,6 +11,7 @@ const nav = [
   { href: "/historico",   label: "Histórico",   icon: History },
   { href: "/contas",      label: "Contas",      icon: Wallet },
   { href: "/lancamento",  label: "Lançar",      icon: PlusCircle },
+  { href: "/investimentos", label: "Investimentos", icon: TrendingUp }
 ];
 
 export default function Sidebar() {
