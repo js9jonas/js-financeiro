@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
 import {
-  Plus, RefreshCw, TrendingUp, TrendingDown, ChevronDown, ChevronUp, X, Check,
+  Plus, RefreshCw, TrendingUp, TrendingDown, ChevronDown, ChevronUp, X, Check, Trash2,
 } from "lucide-react";
 import DividendosSection from "@/components/financeiro/DividendosSection";
 import RendaFixaSection from "@/components/financeiro/RendaFixaSection";
@@ -24,20 +24,23 @@ interface Ativo {
   atualizado_em: string | null;
 }
 
+interface Compra {
+  id: number;
+  ativo_id: number;
+  data_compra: string;
+  quantidade: number;
+  preco_unitario: number;
+  taxas: number;
+  corretora: string | null;
+  observacao: string | null;
+}
+
 const TIPO_LABEL: Record<Tipo, string> = {
-  acao: "Ações",
-  fii: "FIIs",
-  etf: "ETFs",
-  crypto: "Crypto",
-  renda_fixa: "Renda Fixa",
+  acao: "Ações", fii: "FIIs", etf: "ETFs", crypto: "Crypto", renda_fixa: "Renda Fixa",
 };
 
 const TIPO_COR: Record<Tipo, string> = {
-  acao: "#3b82f6",
-  fii: "#8b5cf6",
-  etf: "#06b6d4",
-  crypto: "#f59e0b",
-  renda_fixa: "#22c55e",
+  acao: "#3b82f6", fii: "#8b5cf6", etf: "#06b6d4", crypto: "#f59e0b", renda_fixa: "#22c55e",
 };
 
 function fmt(v: number, dec = 2) {
@@ -45,6 +48,11 @@ function fmt(v: number, dec = 2) {
 }
 function fmtBRL(v: number) { return "R$ " + fmt(v); }
 function fmtPct(v: number) { return (v >= 0 ? "+" : "") + fmt(v) + "%"; }
+function fmtData(d: string) {
+  const s = String(d).split("T")[0];
+  const [y, m, dd] = s.split("-");
+  return `${dd}/${m}/${y}`;
+}
 
 const inputSty = {
   background: "var(--surface2)", border: "1px solid var(--border)",
@@ -62,13 +70,13 @@ export default function InvestimentosPage() {
   const [gruposAbertos, setGruposAbertos] = useState<Record<string, boolean>>({
     acao: true, fii: true, etf: true, crypto: true, renda_fixa: true,
   });
+  const [ativosAbertos, setAtivosAbertos] = useState<Record<number, boolean>>({});
+  const [compras, setCompras] = useState<Record<number, Compra[]>>({});
 
-  // Modais
   const [modalAtivo, setModalAtivo] = useState(false);
-  const [modalCompra, setModalCompra] = useState<number | null>(null); // ativo_id
+  const [modalCompra, setModalCompra] = useState<number | null>(null);
   const [modalPrecoManual, setModalPrecoManual] = useState<Ativo | null>(null);
 
-  // Forms
   const [formAtivo, setFormAtivo] = useState({
     ticker: "", nome: "", tipo: "acao" as Tipo, moeda: "BRL", coingecko_id: "",
   });
@@ -85,6 +93,18 @@ export default function InvestimentosPage() {
   }, []);
 
   useEffect(() => { carregar(); }, [carregar]);
+
+  async function carregarCompras(ativo_id: number) {
+    if (compras[ativo_id]) return;
+    const res = await fetch(`/api/investimentos/compras?ativo_id=${ativo_id}`, { cache: "no-store" });
+    const data = await res.json();
+    setCompras(c => ({ ...c, [ativo_id]: data }));
+  }
+
+  function toggleAtivo(id: number) {
+    if (!ativosAbertos[id]) carregarCompras(id);
+    setAtivosAbertos(a => ({ ...a, [id]: !a[id] }));
+  }
 
   async function atualizarPrecos() {
     setAtualizando(true);
@@ -120,6 +140,14 @@ export default function InvestimentosPage() {
     });
     setModalCompra(null);
     setFormCompra({ data_compra: "", quantidade: "", preco_unitario: "", taxas: "", corretora: "", observacao: "" });
+    setCompras(c => { const n = { ...c }; delete n[modalCompra]; return n; });
+    await carregar();
+  }
+
+  async function deletarCompra(id: number, ativo_id: number) {
+    if (!confirm("Remover esta compra?")) return;
+    await fetch(`/api/investimentos/compras?id=${id}`, { method: "DELETE" });
+    setCompras(c => ({ ...c, [ativo_id]: c[ativo_id]?.filter(x => x.id !== id) }));
     await carregar();
   }
 
@@ -142,7 +170,6 @@ export default function InvestimentosPage() {
     const val = a.preco_atual ? Number(a.quantidade_total) * Number(a.preco_atual) : Number(a.custo_total);
     return acc + val;
   }, 0);
-
   const custoTotal = ativos.reduce((acc, a) => acc + Number(a.custo_total), 0);
   const lucroTotal = patrimonioTotal - custoTotal;
   const rentabilidadePct = custoTotal > 0 ? (lucroTotal / custoTotal) * 100 : 0;
@@ -150,13 +177,10 @@ export default function InvestimentosPage() {
   return (
     <div className="flex flex-col gap-6 max-w-5xl">
 
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold" style={{ color: "var(--text)" }}>Investimentos</h1>
-          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>
-            Patrimônio e evolução dos ativos
-          </p>
+          <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>Patrimônio e evolução dos ativos</p>
         </div>
         <div className="flex gap-2">
           <button onClick={atualizarPrecos} disabled={atualizando}
@@ -173,7 +197,6 @@ export default function InvestimentosPage() {
         </div>
       </div>
 
-      {/* Cards resumo */}
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <div className="rounded-xl p-4 border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
           <p className="text-xs uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>Patrimônio atual</p>
@@ -200,7 +223,6 @@ export default function InvestimentosPage() {
         </div>
       </div>
 
-      {/* Tabela por grupo */}
       {loading ? (
         <div className="flex items-center justify-center h-40">
           <p style={{ color: "var(--text-muted)" }}>Carregando...</p>
@@ -218,15 +240,13 @@ export default function InvestimentosPage() {
       ) : grupos.map(({ tipo, itens }) => {
         const cor = TIPO_COR[tipo];
         const aberto = gruposAbertos[tipo];
-        const subtotal = itens.reduce((acc, a) => {
-          return acc + (a.preco_atual ? Number(a.quantidade_total) * Number(a.preco_atual) : Number(a.custo_total));
-        }, 0);
+        const subtotal = itens.reduce((acc, a) =>
+          acc + (a.preco_atual ? Number(a.quantidade_total) * Number(a.preco_atual) : Number(a.custo_total)), 0);
         const subtotalCusto = itens.reduce((acc, a) => acc + Number(a.custo_total), 0);
         const subtotalLucro = subtotal - subtotalCusto;
 
         return (
           <div key={tipo} className="rounded-xl border overflow-hidden" style={{ borderColor: "var(--border)" }}>
-            {/* Header do grupo */}
             <button className="w-full flex items-center justify-between px-5 py-3"
               style={{ background: cor + "18", borderBottom: aberto ? `1px solid ${cor}33` : "none" }}
               onClick={() => setGruposAbertos(g => ({ ...g, [tipo]: !g[tipo] }))}>
@@ -251,7 +271,6 @@ export default function InvestimentosPage() {
               </div>
             </button>
 
-            {/* Tabela */}
             {aberto && (
               <table className="w-full" style={{ background: "var(--surface)" }}>
                 <thead>
@@ -271,70 +290,144 @@ export default function InvestimentosPage() {
                     const resultado = valorAtual != null ? valorAtual - Number(a.custo_total) : null;
                     const resultadoPct = a.custo_total > 0 && resultado != null
                       ? (resultado / Number(a.custo_total)) * 100 : null;
+                    const ativoAberto = ativosAbertos[a.id];
 
                     return (
-                      <tr key={a.id} className="border-t" style={{ borderColor: "var(--border)" }}>
-                        <td className="px-4 py-3">
-                          <div>
-                            <p className="font-bold text-sm" style={{ color: cor }}>{a.ticker}</p>
-                            <p className="text-xs" style={{ color: "var(--text-muted)" }}>{a.nome}</p>
-                          </div>
-                        </td>
-                        <td className="px-4 py-3 text-right text-sm" style={{ color: "var(--text)" }}>
-                          {fmt(Number(a.quantidade_total), a.tipo === "crypto" ? 8 : 0)}
-                        </td>
-                        <td className="px-4 py-3 text-right text-sm" style={{ color: "var(--text)" }}>
-                          {Number(a.custo_total) > 0 ? fmtBRL(Number(a.preco_medio)) : "—"}
-                        </td>
-                        <td className="px-4 py-3 text-right text-sm">
-                          {a.preco_atual != null ? (
-                            <button onClick={() => { setModalPrecoManual(a); setPrecoManual(String(a.preco_atual)); }}
-                              className="font-semibold hover:underline" style={{ color: "var(--text)" }}>
-                              {fmtBRL(Number(a.preco_atual))}
+                      <>
+                        <tr key={a.id} className="border-t" style={{ borderColor: "var(--border)" }}>
+                          {/* Ticker clicável */}
+                          <td className="px-4 py-3">
+                            <button className="flex items-center gap-2 text-left"
+                              onClick={() => toggleAtivo(a.id)}>
+                              <div>
+                                <p className="font-bold text-sm" style={{ color: cor }}>{a.ticker}</p>
+                                <p className="text-xs" style={{ color: "var(--text-muted)" }}>{a.nome}</p>
+                              </div>
+                              {ativoAberto
+                                ? <ChevronUp size={12} color="var(--text-muted)" />
+                                : <ChevronDown size={12} color="var(--text-muted)" />}
                             </button>
-                          ) : (
-                            <button onClick={() => setModalPrecoManual(a)}
-                              className="text-xs px-2 py-0.5 rounded"
-                              style={{ background: "#fef3c7", color: "#92400e" }}>
-                              Informar
-                            </button>
-                          )}
-                        </td>
-                        <td className="px-4 py-3 text-right text-sm">
-                          {a.variacao_dia != null ? (
-                            <span style={{ color: Number(a.variacao_dia) >= 0 ? "#22c55e" : "#ef4444" }}>
-                              {fmtPct(Number(a.variacao_dia))}
-                            </span>
-                          ) : "—"}
-                        </td>
-                        <td className="px-4 py-3 text-right text-sm" style={{ color: "var(--text-muted)" }}>
-                          {fmtBRL(Number(a.custo_total))}
-                        </td>
-                        <td className="px-4 py-3 text-right text-sm font-semibold" style={{ color: "var(--text)" }}>
-                          {valorAtual != null ? fmtBRL(valorAtual) : "—"}
-                        </td>
-                        <td className="px-4 py-3 text-right text-sm">
-                          {resultado != null ? (
-                            <div>
-                              <p style={{ color: resultado >= 0 ? "#22c55e" : "#ef4444" }}>
-                                {resultado >= 0 ? "+" : ""}{fmtBRL(resultado)}
-                              </p>
-                              {resultadoPct != null && (
-                                <p className="text-xs" style={{ color: resultadoPct >= 0 ? "#22c55e" : "#ef4444" }}>
-                                  {fmtPct(resultadoPct)}
+                          </td>
+                          <td className="px-4 py-3 text-right text-sm" style={{ color: "var(--text)" }}>
+                            {fmt(Number(a.quantidade_total), a.tipo === "crypto" ? 8 : 0)}
+                          </td>
+                          <td className="px-4 py-3 text-right text-sm" style={{ color: "var(--text)" }}>
+                            {Number(a.custo_total) > 0 ? fmtBRL(Number(a.preco_medio)) : "—"}
+                          </td>
+                          <td className="px-4 py-3 text-right text-sm">
+                            {a.preco_atual != null ? (
+                              <button onClick={() => { setModalPrecoManual(a); setPrecoManual(String(a.preco_atual)); }}
+                                className="font-semibold hover:underline" style={{ color: "var(--text)" }}>
+                                {fmtBRL(Number(a.preco_atual))}
+                              </button>
+                            ) : (
+                              <button onClick={() => setModalPrecoManual(a)}
+                                className="text-xs px-2 py-0.5 rounded"
+                                style={{ background: "#fef3c7", color: "#92400e" }}>
+                                Informar
+                              </button>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-right text-sm">
+                            {a.variacao_dia != null ? (
+                              <span style={{ color: Number(a.variacao_dia) >= 0 ? "#22c55e" : "#ef4444" }}>
+                                {fmtPct(Number(a.variacao_dia))}
+                              </span>
+                            ) : "—"}
+                          </td>
+                          <td className="px-4 py-3 text-right text-sm" style={{ color: "var(--text-muted)" }}>
+                            {fmtBRL(Number(a.custo_total))}
+                          </td>
+                          <td className="px-4 py-3 text-right text-sm font-semibold" style={{ color: "var(--text)" }}>
+                            {valorAtual != null ? fmtBRL(valorAtual) : "—"}
+                          </td>
+                          <td className="px-4 py-3 text-right text-sm">
+                            {resultado != null ? (
+                              <div>
+                                <p style={{ color: resultado >= 0 ? "#22c55e" : "#ef4444" }}>
+                                  {resultado >= 0 ? "+" : ""}{fmtBRL(resultado)}
                                 </p>
+                                {resultadoPct != null && (
+                                  <p className="text-xs" style={{ color: resultadoPct >= 0 ? "#22c55e" : "#ef4444" }}>
+                                    {fmtPct(resultadoPct)}
+                                  </p>
+                                )}
+                              </div>
+                            ) : "—"}
+                          </td>
+                          <td className="px-4 py-3 text-right">
+                            <button onClick={() => setModalCompra(a.id)}
+                              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs ml-auto"
+                              style={{ background: "#dbeafe", color: "#1d4ed8" }}>
+                              <Plus size={11} /> Compra
+                            </button>
+                          </td>
+                        </tr>
+
+                        {/* Sublinhas de compras */}
+                        {ativoAberto && (
+                          <tr style={{ background: "var(--surface2)" }}>
+                            <td colSpan={9} className="px-0 py-0">
+                              {!compras[a.id] ? (
+                                <p className="text-xs text-center py-3" style={{ color: "var(--text-muted)" }}>Carregando...</p>
+                              ) : compras[a.id].length === 0 ? (
+                                <p className="text-xs text-center py-3" style={{ color: "var(--text-muted)" }}>Nenhuma compra registrada.</p>
+                              ) : (
+                                <table className="w-full">
+                                  <thead>
+                                    <tr style={{ borderBottom: "1px solid var(--border)", borderTop: "1px solid var(--border)" }}>
+                                      <th style={{ width: 40 }} />
+                                      {["Data", "Qtd", "Preço Unit.", "Taxas", "Total", "Corretora", "Obs.", ""].map((h, i) => (
+                                        <th key={i} style={{
+                                          color: "var(--text-muted)", fontSize: 10, fontWeight: 600,
+                                          textTransform: "uppercase", padding: "6px 12px",
+                                          textAlign: i >= 1 && i <= 4 ? "right" : "left",
+                                        }}>{h}</th>
+                                      ))}
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {compras[a.id].map(c => (
+                                      <tr key={c.id} style={{ borderTop: "1px solid var(--border)" }}>
+                                        <td style={{ paddingLeft: 32 }}>
+                                          <span style={{ color: cor, fontSize: 10 }}>↳</span>
+                                        </td>
+                                        <td className="px-3 py-2 text-xs" style={{ color: "var(--text)" }}>
+                                          {fmtData(c.data_compra)}
+                                        </td>
+                                        <td className="px-3 py-2 text-xs text-right" style={{ color: "var(--text)" }}>
+                                          {fmt(Number(c.quantidade), a.tipo === "crypto" ? 8 : 0)}
+                                        </td>
+                                        <td className="px-3 py-2 text-xs text-right" style={{ color: "var(--text)" }}>
+                                          {fmtBRL(Number(c.preco_unitario))}
+                                        </td>
+                                        <td className="px-3 py-2 text-xs text-right" style={{ color: "var(--text-muted)" }}>
+                                          {Number(c.taxas) > 0 ? fmtBRL(Number(c.taxas)) : "—"}
+                                        </td>
+                                        <td className="px-3 py-2 text-xs text-right font-semibold" style={{ color: "var(--text)" }}>
+                                          {fmtBRL(Number(c.quantidade) * Number(c.preco_unitario) + Number(c.taxas))}
+                                        </td>
+                                        <td className="px-3 py-2 text-xs" style={{ color: "var(--text-muted)" }}>
+                                          {c.corretora ?? "—"}
+                                        </td>
+                                        <td className="px-3 py-2 text-xs" style={{ color: "var(--text-muted)" }}>
+                                          {c.observacao ?? "—"}
+                                        </td>
+                                        <td className="px-3 py-2 text-right">
+                                          <button onClick={() => deletarCompra(c.id, a.id)}
+                                            className="p-1 rounded" style={{ color: "#ef4444" }}>
+                                            <Trash2 size={12} />
+                                          </button>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
                               )}
-                            </div>
-                          ) : "—"}
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <button onClick={() => setModalCompra(a.id)}
-                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs ml-auto"
-                            style={{ background: "#dbeafe", color: "#1d4ed8" }}>
-                            <Plus size={11} /> Compra
-                          </button>
-                        </td>
-                      </tr>
+                            </td>
+                          </tr>
+                        )}
+                      </>
                     );
                   })}
                 </tbody>
@@ -492,6 +585,7 @@ export default function InvestimentosPage() {
           </div>
         </div>
       )}
+
       <div className="border-t pt-6" style={{ borderColor: "var(--border)" }}>
         <RendaFixaSection />
       </div>
