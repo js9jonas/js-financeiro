@@ -84,13 +84,12 @@ export async function GET(req: NextRequest) {
     AND t.id IS NULL
 `);
 
-    const [pagoMesRow] = await query<{ total: string }>(`
-  SELECT COALESCE(SUM(t.valor), 0) AS total
-  FROM privado.transacoes t
-  WHERE t.tipo = 'despesa'
-    AND t.recorrente_id IS NOT NULL
-    AND t.data_pagamento IS NOT NULL
-    AND DATE_TRUNC('month', t.data_pagamento) = DATE_TRUNC('month', CURRENT_DATE)
+  const [pagoMesRow] = await query<{ total: string }>(`
+  SELECT COALESCE(SUM(valor), 0) AS total
+  FROM privado.transacoes
+  WHERE tipo = 'despesa'
+    AND data_pagamento IS NOT NULL
+    AND DATE_TRUNC('month', data_pagamento) = DATE_TRUNC('month', CURRENT_DATE)
 `);
 
     const [diasRow] = await query<{ dias_mes: string; dias_passados: string; dias_restantes: string }>(`

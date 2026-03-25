@@ -136,7 +136,7 @@ export default async function DashboardPage() {
                   <span className="text-xs font-medium" style={{ color: "var(--text-muted)" }}>{conta.nome}</span>
                 </div>
                 <span className="text-sm font-semibold" style={{ color: "var(--text)" }}>
-                  R$ {Number(conta.saldo_inicial).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                  R$ {Number(conta.saldo_atual).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                 </span>
               </div>
             ))}
