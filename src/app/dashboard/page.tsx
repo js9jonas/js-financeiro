@@ -3,6 +3,7 @@ import ProjecaoSaldo from "@/components/financeiro/ProjecaoSaldo";
 import { query } from "@/lib/db";
 import { CartaoSaldo } from "@/components/financeiro/CartaoSaldo";
 import type { ContaComSaldo } from "@/types/financeiro";
+import AutoRefresh from "@/components/AutoRefresh";
 export const dynamic = 'force-dynamic';
 interface ContaComSaldoEFluxo extends ContaComSaldo {
   fluxo_caixa: boolean;
@@ -71,7 +72,9 @@ export default async function DashboardPage() {
   const { contas, contasFluxo, saldoTotal, totalPendente, totalPago, receitasMes } = data;
 
   return (
+    
     <div className="flex flex-col gap-6 max-w-5xl">
+      <AutoRefresh interval={5000} />
       <div>
         <h1 className="text-2xl font-bold" style={{ color: "var(--text)" }}>Dashboard</h1>
         <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>

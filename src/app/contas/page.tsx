@@ -1,7 +1,9 @@
 "use client";
 import { useEffect, useState, useCallback, memo } from "react";
 import { CheckCircle2, AlertTriangle, RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
+import AutoRefresh from "@/components/AutoRefresh";
 export const dynamic = 'force-dynamic';
+
 interface Conta {
   id: number;
   nome: string;
@@ -59,6 +61,7 @@ const CardConta = memo(function CardConta({
         borderColor: temDivergencia && confirmadoValido ? "#fbbf24" : "var(--border)"
       }}
     >
+      <AutoRefresh interval={5000} />
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-full" style={{ background: conta.cor ?? "#64748b" }} />
@@ -218,7 +221,8 @@ export default function ContasPage() {
   }, [carregar]);
 
   const atualizarPatrimonio = useCallback(async (conta: ContaUI) => {
-    const novoSaldo = parseBR(conta.saldoConfirmado);
+    console.log("atualizarPatrimonio chamado", conta.id, conta.saldoDigitado); 
+    const novoSaldo = parseBR(conta.saldoDigitado);
     if (isNaN(novoSaldo)) {
       setContas(prev => prev.map(c => c.id === conta.id ? { ...c, erro: "Valor inválido" } : c));
       return;
