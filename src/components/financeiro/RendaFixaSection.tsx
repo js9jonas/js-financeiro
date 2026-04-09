@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback } from "react";
-import { Plus, X, Check, ChevronDown, ChevronUp, Trash2, Pencil, RefreshCw } from "lucide-react";
+import { Plus, X, Check, ChevronDown, ChevronUp, Trash2, Pencil, RefreshCw, ArrowLeftRight } from "lucide-react";
 
 interface RendaFixa {
   id: number;
@@ -38,6 +38,7 @@ const TIPO_COR: Record<string, string> = {
 
 const APORTE_LABEL: Record<string, string> = {
   aporte: "Aporte", resgate: "Resgate", rendimento: "Rendimento",
+  transferencia_entrada: "Transferência entrada", transferencia_saida: "Transferência saída",
 };
 
 const inputSty = {
@@ -80,6 +81,11 @@ export default function RendaFixaSection() {
 
   const [modalValor, setModalValor] = useState<RendaFixa | null>(null);
   const [novoValor, setNovoValor] = useState("");
+
+  const [modalTransferencia, setModalTransferencia] = useState(false);
+  const [formTransferencia, setFormTransferencia] = useState({
+    origem_id: "", destino_id: "", valor: "", data: "", observacao: "",
+  });
 
   const patrimonioTotal = itens.reduce((acc, r) => acc + Number(r.valor_atual), 0);
   const totalAportado = itens.reduce((acc, r) => acc + Number(r.total_aportado), 0);
@@ -170,6 +176,37 @@ export default function RendaFixaSection() {
     await carregar();
   }
 
+  async function salvarTransferencia() {
+    const { origem_id, destino_id, valor, data, observacao } = formTransferencia;
+    if (!origem_id || !destino_id || !valor || !data || origem_id === destino_id) return;
+    const valorNum = parseBR(valor);
+    const obs = observacao || null;
+    const origem = itens.find(r => r.id === Number(origem_id))!;
+    const destino = itens.find(r => r.id === Number(destino_id))!;
+    await Promise.all([
+      fetch("/api/investimentos/renda-fixa-aportes", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ renda_fixa_id: Number(origem_id), data_aporte: data, valor: valorNum, tipo: "transferencia_saida", observacao: obs }),
+      }),
+      fetch("/api/investimentos/renda-fixa-aportes", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ renda_fixa_id: Number(destino_id), data_aporte: data, valor: valorNum, tipo: "transferencia_entrada", observacao: obs }),
+      }),
+      fetch(`/api/investimentos/renda-fixa?id=${origem_id}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ valor_atual: Number(origem.valor_atual) - valorNum }),
+      }),
+      fetch(`/api/investimentos/renda-fixa?id=${destino_id}`, {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ valor_atual: Number(destino.valor_atual) + valorNum }),
+      }),
+    ]);
+    setModalTransferencia(false);
+    setFormTransferencia({ origem_id: "", destino_id: "", valor: "", data: "", observacao: "" });
+    setAportes({});
+    await carregar();
+  }
+
   return (
     <div className="flex flex-col gap-4">
       {/* Header */}
@@ -180,11 +217,18 @@ export default function RendaFixaSection() {
             CDB, LCI, LCA, Tesouro e outros
           </p>
         </div>
-        <button onClick={() => { setEditandoRF(null); setFormRF(FORM_RF_VAZIO); setModalRF(true); }}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium"
-          style={{ background: "#0ea5e9", color: "#fff" }}>
-          <Plus size={15} /> Nova aplicação
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setModalTransferencia(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium"
+            style={{ background: "var(--surface2)", color: "var(--text)", border: "1px solid var(--border)" }}>
+            <ArrowLeftRight size={15} /> Transferir
+          </button>
+          <button onClick={() => { setEditandoRF(null); setFormRF(FORM_RF_VAZIO); setModalRF(true); }}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium"
+            style={{ background: "#0ea5e9", color: "#fff" }}>
+            <Plus size={15} /> Nova aplicação
+          </button>
+        </div>
       </div>
 
       {/* Cards */}
@@ -328,16 +372,16 @@ export default function RendaFixaSection() {
                               </td>
                               <td className="px-4 py-2">
                                 <span className="text-xs px-2 py-0.5 rounded-full" style={{
-                                  background: a.tipo === "resgate" ? "#fee2e2" : a.tipo === "rendimento" ? "#dcfce7" : "#dbeafe",
-                                  color: a.tipo === "resgate" ? "#991b1b" : a.tipo === "rendimento" ? "#166534" : "#1d4ed8",
+                                  background: a.tipo === "resgate" ? "#fee2e2" : a.tipo === "rendimento" ? "#dcfce7" : a.tipo?.startsWith("transferencia") ? "#f3e8ff" : "#dbeafe",
+                                  color: a.tipo === "resgate" ? "#991b1b" : a.tipo === "rendimento" ? "#166534" : a.tipo?.startsWith("transferencia") ? "#7e22ce" : "#1d4ed8",
                                 }}>
                                   {APORTE_LABEL[a.tipo] ?? a.tipo}
                                 </span>
                               </td>
                               <td className="px-4 py-2 text-sm text-right font-semibold" style={{
-                                color: a.tipo === "resgate" ? "#ef4444" : a.tipo === "rendimento" ? "#22c55e" : "var(--text)",
+                                color: a.tipo === "resgate" || a.tipo === "transferencia_saida" ? "#ef4444" : a.tipo === "rendimento" || a.tipo === "transferencia_entrada" ? "#22c55e" : "var(--text)",
                               }}>
-                                {a.tipo === "resgate" ? "−" : "+"}{fmtBRL(Number(a.valor))}
+                                {a.tipo === "resgate" || a.tipo === "transferencia_saida" ? "−" : "+"}{fmtBRL(Number(a.valor))}
                               </td>
                               <td className="px-4 py-2 text-sm" style={{ color: "var(--text-muted)" }}>
                                 {a.observacao ?? "—"}
@@ -464,6 +508,67 @@ export default function RendaFixaSection() {
                 className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium"
                 style={{ background: "#0ea5e9", color: "#fff" }}>
                 <Check size={14} /> Registrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal transferência */}
+      {modalTransferencia && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.5)" }}>
+          <div className="rounded-2xl p-6 w-full max-w-md flex flex-col gap-4"
+            style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
+            <div className="flex items-center justify-between">
+              <h2 className="font-semibold" style={{ color: "var(--text)" }}>Transferência entre rendas fixas</h2>
+              <button onClick={() => setModalTransferencia(false)}><X size={18} color="var(--text-muted)" /></button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Origem *</label>
+                <select style={inputSty} value={formTransferencia.origem_id}
+                  onChange={e => setFormTransferencia(f => ({ ...f, origem_id: e.target.value }))}>
+                  <option value="">Selecione</option>
+                  {itens.map(r => <option key={r.id} value={r.id}>{r.nome}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Destino *</label>
+                <select style={inputSty} value={formTransferencia.destino_id}
+                  onChange={e => setFormTransferencia(f => ({ ...f, destino_id: e.target.value }))}>
+                  <option value="">Selecione</option>
+                  {itens.filter(r => String(r.id) !== formTransferencia.origem_id).map(r => (
+                    <option key={r.id} value={r.id}>{r.nome}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Valor *</label>
+                <input style={inputSty} placeholder="0,00" value={formTransferencia.valor}
+                  onChange={e => setFormTransferencia(f => ({ ...f, valor: e.target.value }))} />
+              </div>
+              <div>
+                <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Data *</label>
+                <input type="date" style={inputSty} value={formTransferencia.data}
+                  onChange={e => setFormTransferencia(f => ({ ...f, data: e.target.value }))} />
+              </div>
+              <div className="col-span-2">
+                <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Observação</label>
+                <input style={inputSty} value={formTransferencia.observacao}
+                  onChange={e => setFormTransferencia(f => ({ ...f, observacao: e.target.value }))} />
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end">
+              <button onClick={() => setModalTransferencia(false)}
+                className="px-4 py-2 rounded-lg text-sm"
+                style={{ background: "var(--surface2)", color: "var(--text-muted)" }}>
+                Cancelar
+              </button>
+              <button onClick={salvarTransferencia}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium"
+                style={{ background: "#0ea5e9", color: "#fff" }}>
+                <Check size={14} /> Transferir
               </button>
             </div>
           </div>

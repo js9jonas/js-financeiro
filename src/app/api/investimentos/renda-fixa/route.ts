@@ -7,8 +7,8 @@ export async function GET() {
     const rows = await query(`
       SELECT
         r.*,
-        COALESCE(SUM(CASE WHEN a.tipo = 'aporte'    THEN a.valor ELSE 0 END), 0) AS total_aportado,
-        COALESCE(SUM(CASE WHEN a.tipo = 'resgate'   THEN a.valor ELSE 0 END), 0) AS total_resgatado,
+        COALESCE(SUM(CASE WHEN a.tipo IN ('aporte', 'transferencia_entrada')  THEN a.valor ELSE 0 END), 0) AS total_aportado,
+        COALESCE(SUM(CASE WHEN a.tipo IN ('resgate', 'transferencia_saida') THEN a.valor ELSE 0 END), 0) AS total_resgatado,
         COALESCE(SUM(CASE WHEN a.tipo = 'rendimento' THEN a.valor ELSE 0 END), 0) AS total_rendimentos,
         COUNT(a.id) AS qtd_movimentacoes
       FROM privado.investimentos_renda_fixa r
