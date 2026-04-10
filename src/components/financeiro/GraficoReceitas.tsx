@@ -21,13 +21,13 @@ interface ReceitaMes {
   quantidade: string;
 }
 
-export default function GraficoReceitas() {
+export default function GraficoReceitas({ refreshKey }: { refreshKey?: number }) {
   const [dados, setDados] = useState<{ mes: string; total: number; projecao?: number }[]>([]);
   const [projecao, setProjecao] = useState(0);
   const [loading, setLoading] = useState(true);
 
   const carregar = useCallback(() => {
-    fetch("/api/receitas")
+    fetch("/api/receitas", { cache: "no-store" })
       .then(r => r.json())
       .then(data => {
         const agora = new Date();
@@ -42,15 +42,13 @@ export default function GraficoReceitas() {
         setDados(processado);
         setProjecao(data.projecao);
         setLoading(false);
-      });
+      })
+      .catch(() => setLoading(false));
   }, []);
 
   useEffect(() => {
     carregar();
-    const onVisible = () => { if (document.visibilityState === "visible") carregar(); };
-    document.addEventListener("visibilitychange", onVisible);
-    return () => document.removeEventListener("visibilitychange", onVisible);
-  }, [carregar]);
+  }, [refreshKey, carregar]);
 
   if (loading) return (
     <div className="flex items-center justify-center h-40">

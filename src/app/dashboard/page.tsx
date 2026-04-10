@@ -120,7 +120,7 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <GraficoReceitas />
+      <GraficoReceitas refreshKey={Date.now()} />
 
       {contas.filter(c => !c.fluxo_caixa).length > 0 && (
         <div>
