@@ -2,7 +2,6 @@
 import { useEffect, useState, useCallback, memo } from "react";
 import { Plus, Pencil, Check, X, CreditCard, Trash2, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
 import { TIPO_DESPESA_LABEL, TIPO_DESPESA_COR, type TipoDespesa } from "@/types/financeiro";
-import AutoRefresh from "@/components/AutoRefresh";
 export const dynamic = 'force-dynamic';
 
 function parseBR(v: string): number {
@@ -382,7 +381,12 @@ export default function PagamentosPage() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { carregar(mes, ano); }, [mes, ano, carregar]);
+  useEffect(() => {
+    carregar(mes, ano);
+    const onVisible = () => { if (document.visibilityState === "visible") carregar(mes, ano); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [mes, ano, carregar]);
 
   function navMes(dir: number) {
     let m = mes + dir, a = ano;
@@ -492,7 +496,6 @@ export default function PagamentosPage() {
 
       {/* Header */}
       <div className="flex items-center justify-between">
-        <AutoRefresh interval={5000} />
         <div>
           <h1 className="text-2xl font-bold" style={{ color: "var(--text)" }}>Pagamentos</h1>
           <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>

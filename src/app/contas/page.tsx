@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState, useCallback, memo } from "react";
 import { CheckCircle2, AlertTriangle, RefreshCw, TrendingUp, TrendingDown } from "lucide-react";
-import AutoRefresh from "@/components/AutoRefresh";
 export const dynamic = 'force-dynamic';
 
 interface Conta {
@@ -61,7 +60,6 @@ const CardConta = memo(function CardConta({
         borderColor: temDivergencia && confirmadoValido ? "#fbbf24" : "var(--border)"
       }}
     >
-      <AutoRefresh interval={5000} />
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="w-3 h-3 rounded-full" style={{ background: conta.cor ?? "#64748b" }} />
@@ -178,7 +176,12 @@ export default function ContasPage() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { carregar(); }, [carregar]);
+  useEffect(() => {
+    carregar();
+    const onVisible = () => { if (document.visibilityState === "visible") carregar(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [carregar]);
 
   const aoDigitar = useCallback((id: number, valor: string) => {
     setContas(prev => prev.map(c => c.id === id

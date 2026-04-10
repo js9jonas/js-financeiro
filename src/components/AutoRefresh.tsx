@@ -3,11 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-export default function AutoRefresh({ interval = 3000 }: { interval?: number }) {
+export default function AutoRefresh() {
     const router = useRouter();
     useEffect(() => {
-        const id = setInterval(() => router.refresh(), interval);
-        return () => clearInterval(id);
-    }, [interval]);
+        const onVisible = () => { if (document.visibilityState === "visible") router.refresh(); };
+        document.addEventListener("visibilitychange", onVisible);
+        return () => document.removeEventListener("visibilitychange", onVisible);
+    }, []);
     return null;
 }

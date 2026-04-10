@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, Tooltip,
   ResponsiveContainer, CartesianGrid, ReferenceLine,
@@ -26,7 +26,7 @@ export default function GraficoReceitas() {
   const [projecao, setProjecao] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const carregar = useCallback(() => {
     fetch("/api/receitas")
       .then(r => r.json())
       .then(data => {
@@ -44,6 +44,13 @@ export default function GraficoReceitas() {
         setLoading(false);
       });
   }, []);
+
+  useEffect(() => {
+    carregar();
+    const onVisible = () => { if (document.visibilityState === "visible") carregar(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [carregar]);
 
   if (loading) return (
     <div className="flex items-center justify-center h-40">

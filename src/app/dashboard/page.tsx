@@ -74,7 +74,7 @@ export default async function DashboardPage() {
   return (
     
     <div className="flex flex-col gap-6 max-w-5xl">
-      <AutoRefresh interval={5000} />
+      <AutoRefresh />
       <div>
         <h1 className="text-2xl font-bold" style={{ color: "var(--text)" }}>Dashboard</h1>
         <p className="text-sm mt-1" style={{ color: "var(--text-muted)" }}>

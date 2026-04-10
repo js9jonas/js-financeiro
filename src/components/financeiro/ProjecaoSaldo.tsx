@@ -47,7 +47,12 @@ export default function ProjecaoSaldo() {
     setLoading(false);
   }, [base]);
 
-  useEffect(() => { carregar(); }, [carregar]);
+  useEffect(() => {
+    carregar();
+    const onVisible = () => { if (document.visibilityState === "visible") carregar(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [carregar]);
 
   return (
     <div className="flex flex-col gap-4">
