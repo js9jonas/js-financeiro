@@ -30,6 +30,7 @@ interface Ativo {
   ticker: string;
   nome: string;
   tipo: string;
+  quantidade_total: number;
 }
 
 const TIPO_LABEL: Record<string, string> = {
@@ -313,7 +314,14 @@ export default function DividendosSection({ ativos }: Props) {
               <div className="col-span-2">
                 <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Ativo *</label>
                 <select style={inputSty} value={form.ativo_id}
-                  onChange={e => setForm(f => ({ ...f, ativo_id: e.target.value }))}
+                  onChange={e => {
+                    const ativo = ativos.find(a => a.id === parseInt(e.target.value));
+                    setForm(f => ({
+                      ...f,
+                      ativo_id: e.target.value,
+                      quantidade_na_data: ativo ? String(ativo.quantidade_total) : f.quantidade_na_data,
+                    }));
+                  }}
                   disabled={!!editando}>
                   <option value="">— Selecione —</option>
                   {ativos.map(a => (
