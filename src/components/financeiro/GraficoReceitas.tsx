@@ -50,6 +50,12 @@ export default function GraficoReceitas({ refreshKey }: { refreshKey?: number })
     carregar();
   }, [refreshKey, carregar]);
 
+  useEffect(() => {
+    const onVisible = () => { if (document.visibilityState === "visible") carregar(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
+  }, [carregar]);
+
   if (loading) return (
     <div className="flex items-center justify-center h-40">
       <p className="text-sm" style={{ color: "var(--text-muted)" }}>Carregando gráfico...</p>

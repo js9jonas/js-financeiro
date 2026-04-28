@@ -128,12 +128,17 @@ export default function ProjecaoSaldo() {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-1.5 text-sm font-bold"
+              <div className="flex flex-col items-end gap-0.5"
                 style={{ color: data.variacaoDia > 0 ? "#15803d" : data.variacaoDia < 0 ? "#b91c1c" : "var(--text-muted)" }}>
-                {data.variacaoDia > 0 ? <TrendingUp size={16} />
-                  : data.variacaoDia < 0 ? <TrendingDown size={16} />
-                    : <Minus size={16} />}
-                {data.variacaoDia > 0 ? "+" : ""}{data.variacaoDiaPct.toFixed(1)}%
+                <div className="flex items-center gap-1.5 text-sm font-bold">
+                  {data.variacaoDia > 0 ? <TrendingUp size={16} />
+                    : data.variacaoDia < 0 ? <TrendingDown size={16} />
+                      : <Minus size={16} />}
+                  {data.variacaoDia > 0 ? "+" : ""}{data.variacaoDiaPct.toFixed(1)}%
+                </div>
+                <span className="text-xs font-semibold">
+                  {data.variacaoDia > 0 ? "+" : data.variacaoDia < 0 ? "−" : ""}R$ {fmt(Math.abs(data.variacaoDia))}
+                </span>
               </div>
             </div>
 
