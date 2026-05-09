@@ -47,14 +47,18 @@ export default function GraficoProjecaoDiaria({ base }: Props) {
   const [loading, setLoading] = useState(true);
 
   const carregar = useCallback(async () => {
-    setLoading(true);
     const res = await fetch(`/api/projecao?base=${base}`, { cache: 'no-store' });
     const json = await res.json();
     setData(json);
     setLoading(false);
   }, [base]);
 
-  useEffect(() => { carregar(); }, [carregar]);
+  useEffect(() => {
+    setLoading(true);
+    carregar();
+    const id = setInterval(carregar, 5000);
+    return () => clearInterval(id);
+  }, [carregar]);
 
   if (loading || !data) {
     return (
