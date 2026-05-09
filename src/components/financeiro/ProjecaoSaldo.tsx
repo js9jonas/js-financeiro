@@ -4,7 +4,7 @@ import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import GraficoProjecaoDiaria from "./GraficoProjecaoDiaria";
 
 function fmt(v: number) {
-  return v.toLocaleString("pt-BR", { minimumFractionDigits: 2 });
+  return v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 interface ProjecaoData {
