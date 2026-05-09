@@ -51,6 +51,11 @@ export default function GraficoReceitas({ refreshKey }: { refreshKey?: number })
   }, [refreshKey, carregar]);
 
   useEffect(() => {
+    const id = setInterval(carregar, 5000);
+    return () => clearInterval(id);
+  }, [carregar]);
+
+  useEffect(() => {
     const onVisible = () => { if (document.visibilityState === "visible") carregar(); };
     document.addEventListener("visibilitychange", onVisible);
     return () => document.removeEventListener("visibilitychange", onVisible);
