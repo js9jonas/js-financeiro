@@ -483,7 +483,7 @@ export default function PagamentosPage() {
   // Pendentes com data dentro do mês (ou sem data no mês atual)
   const pendentesMes = itensDoMes.filter(p => {
     if (p.data_pagamento) return false;
-    if (!p.data_vencimento) return !isFuturo;
+    if (!p.data_vencimento) return false;
     const d = new Date(String(p.data_vencimento).split("T")[0] + "T12:00:00");
     return d.getMonth() + 1 === mes && d.getFullYear() === ano;
   });
