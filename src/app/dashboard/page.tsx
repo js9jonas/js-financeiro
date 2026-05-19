@@ -17,6 +17,40 @@ async function getDashboardData() {
   const contasFluxo = contas.filter(c => c.fluxo_caixa);
   const saldoTotal = contasFluxo.reduce((acc, c) => acc + Number(c.saldo_atual), 0);
 
+  const movDia = await query<{ id: number; saidas_hoje: string; entradas_hoje: string }>(`
+    SELECT
+      c.id,
+      COALESCE((
+        SELECT SUM(t.valor) FROM privado.transacoes t
+        WHERE t.data_pagamento = CURRENT_DATE
+          AND (
+            (t.tipo = 'despesa' AND t.conta_id = c.id)
+            OR (t.tipo = 'transferencia' AND t.conta_id = c.id)
+          )
+      ), 0) AS saidas_hoje,
+      COALESCE((
+        SELECT SUM(t.valor) FROM privado.transacoes t
+        WHERE t.data_pagamento = CURRENT_DATE
+          AND t.tipo = 'transferencia' AND t.conta_destino_id = c.id
+      ), 0)
+      + COALESCE((
+        SELECT SUM(e.valor) FROM privado.entradas e
+        WHERE e.data_recebimento = CURRENT_DATE AND e.conta_id = c.id
+      ), 0)
+      + COALESCE((
+        SELECT SUM(p.valor) FROM public.pagamentos p
+        WHERE p.data_pgto = CURRENT_DATE AND p.valor > 0
+          AND CASE UPPER(TRIM(p.forma))
+            WHEN 'PIX' THEN 1 WHEN 'NUBANK' THEN 2 WHEN 'SICREDI' THEN 3
+            WHEN 'CAIXA' THEN 4 WHEN 'NU PJ' THEN 5 WHEN 'DINHEIRO' THEN 6
+            WHEN 'MP' THEN 10 WHEN 'BANRISUL' THEN 11 ELSE NULL END = c.id
+      ), 0) AS entradas_hoje
+    FROM privado.contas c
+    WHERE c.ativo = true AND c.fluxo_caixa = true
+  `);
+
+  const movDiaMap = new Map(movDia.map(m => [Number(m.id), { saidas: Number(m.saidas_hoje), entradas: Number(m.entradas_hoje) }]));
+
   const [pendente30] = await query<{ total: string }>(`
   SELECT COALESCE(SUM(r.valor_padrao), 0) AS total
   FROM privado.recorrentes r
@@ -47,7 +81,7 @@ async function getDashboardData() {
   const totalPago = Number(pagoMes.total);
   const receitasMes = Number(receitasIptv.total);
 
-  return { contas, contasFluxo, saldoTotal, totalPendente, totalPago, receitasMes };
+  return { contas, contasFluxo, saldoTotal, totalPendente, totalPago, receitasMes, movDiaMap };
 }
 
 export default async function DashboardPage() {
@@ -69,7 +103,7 @@ export default async function DashboardPage() {
     );
   }
 
-  const { contas, contasFluxo, saldoTotal, totalPendente, totalPago, receitasMes } = data;
+  const { contas, contasFluxo, saldoTotal, totalPendente, totalPago, receitasMes, movDiaMap } = data;
 
   return (
     
@@ -109,12 +143,24 @@ export default async function DashboardPage() {
               <span className="text-xl font-bold" style={{ color: Number(conta.saldo_atual) >= 0 ? "#0369a1" : "#ef4444" }}>
                 R$ {Number(conta.saldo_atual).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
               </span>
-              {Number(conta.movimentacao) !== 0 && (
-                <span className="text-xs" style={{ color: "var(--text-muted)" }}>
-                  {Number(conta.movimentacao) > 0 ? "+" : ""}
-                  R$ {Number(conta.movimentacao).toLocaleString("pt-BR", { minimumFractionDigits: 2 })} hoje
-                </span>
-              )}
+              {(() => {
+                const mov = movDiaMap.get(Number(conta.id));
+                if (!mov || (mov.entradas === 0 && mov.saidas === 0)) return null;
+                return (
+                  <div className="flex flex-col gap-0.5">
+                    {mov.entradas > 0 && (
+                      <span className="text-xs" style={{ color: "#22c55e" }}>
+                        +R$ {mov.entradas.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} entradas hoje
+                      </span>
+                    )}
+                    {mov.saidas > 0 && (
+                      <span className="text-xs" style={{ color: "#ef4444" }}>
+                        -R$ {mov.saidas.toLocaleString("pt-BR", { minimumFractionDigits: 2 })} saídas hoje
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           ))}
         </div>
