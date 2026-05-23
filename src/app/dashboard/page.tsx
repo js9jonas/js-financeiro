@@ -99,9 +99,9 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <CartaoSaldo titulo="Saldo Fluxo" valor={saldoTotal} descricao="Contas de fluxo de caixa" cor="azul" />
+        <CartaoSaldo titulo="Pendente (mês)" valor={totalPendente} descricao="Pendente no mês atual" cor="amarelo" />
         <CartaoSaldo titulo="Receitas do Mês" valor={receitasMes} descricao="Recebimentos IPTV" cor="verde" />
         <CartaoSaldo titulo="Pago no Mês" valor={totalPago} descricao="Despesas efetivadas" cor="vermelho" />
-        <CartaoSaldo titulo="Pendente (mês)" valor={totalPendente} descricao="Pendente no mês atual" cor="amarelo" />
       </div>
 
       <ProjecaoSaldo />
