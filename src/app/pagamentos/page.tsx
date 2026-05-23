@@ -509,21 +509,6 @@ export default function PagamentosPage() {
         </button>
       </div>
 
-      {/* Navegação mês */}
-      <div className="flex items-center gap-3">
-        <button onClick={() => navMes(-1)} className="p-1.5 rounded-lg"
-          style={{ background: "var(--surface2)", color: "var(--text-muted)" }}>
-          <ChevronLeft size={16} />
-        </button>
-        <span className="text-base font-semibold" style={{ color: "var(--text)", minWidth: 160, textAlign: "center" }}>
-          {MESES[mes - 1]} {ano}
-        </span>
-        <button onClick={() => navMes(1)} className="p-1.5 rounded-lg"
-          style={{ background: "var(--surface2)", color: "var(--text-muted)" }}>
-          <ChevronRight size={16} />
-        </button>
-      </div>
-
       {/* Saldos contas de fluxo */}
       {contas.filter(c => c.fluxo_caixa).length > 0 && (
         <div className="flex gap-3 flex-wrap">
@@ -559,6 +544,21 @@ export default function PagamentosPage() {
             R$ {fmt(total - totalPago)}
           </p>
         </div>
+      </div>
+
+      {/* Navegação mês */}
+      <div className="flex items-center gap-3">
+        <button onClick={() => navMes(-1)} className="p-1.5 rounded-lg"
+          style={{ background: "var(--surface2)", color: "var(--text-muted)" }}>
+          <ChevronLeft size={16} />
+        </button>
+        <span className="text-base font-semibold" style={{ color: "var(--text)", minWidth: 160, textAlign: "center" }}>
+          {MESES[mes - 1]} {ano}
+        </span>
+        <button onClick={() => navMes(1)} className="p-1.5 rounded-lg"
+          style={{ background: "var(--surface2)", color: "var(--text-muted)" }}>
+          <ChevronRight size={16} />
+        </button>
       </div>
 
       {/* Busca */}

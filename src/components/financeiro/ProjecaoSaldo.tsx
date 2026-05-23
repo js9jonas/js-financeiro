@@ -56,26 +56,21 @@ export default function ProjecaoSaldo() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-xl border p-5 flex flex-col gap-4"
+      <div className="rounded-xl border p-4 flex flex-col gap-3"
         style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
 
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-              Projeção do Mês
-            </h2>
-            <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
-              Média histórica por dia do mês
-            </p>
-          </div>
-          <div className="flex flex-col items-end gap-1">
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}>Base histórica</p>
-            <div className="flex items-center gap-1 rounded-lg p-1"
+          <h2 className="text-sm font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
+            Projeção do Mês
+          </h2>
+          <div className="flex items-center gap-2">
+            <p className="text-xs" style={{ color: "var(--text-muted)" }}>Base:</p>
+            <div className="flex items-center gap-0.5 rounded-lg p-0.5"
               style={{ background: "var(--surface2)", border: "1px solid var(--border)" }}>
               {OPCOES.map(o => (
                 <button key={o.valor} onClick={() => setBase(o.valor)}
-                  className="px-2.5 py-1 rounded text-xs font-medium transition-colors"
+                  className="px-2 py-0.5 rounded text-xs font-medium transition-colors"
                   style={base === o.valor
                     ? { background: "#0ea5e9", color: "#fff" }
                     : { color: "var(--text-muted)" }}>
@@ -95,45 +90,45 @@ export default function ProjecaoSaldo() {
             {/* Valor principal */}
             <div className="flex items-end justify-between">
               <div>
-                <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>Saldo estimado ao fim do mês</p>
-                <p className="text-3xl font-bold" style={{ color: data.projecao >= 0 ? "#0369a1" : "#ef4444" }}>
+                <p className="text-xs mb-0.5" style={{ color: "var(--text-muted)" }}>Saldo estimado ao fim do mês</p>
+                <p className="text-2xl font-bold" style={{ color: data.projecao >= 0 ? "#0369a1" : "#ef4444" }}>
                   R$ {fmt(data.projecao)}
                 </p>
               </div>
               <div className="text-right">
                 <p className="text-xs mb-0.5" style={{ color: "var(--text-muted)" }}>Receita projetada</p>
-                <p className="text-lg font-bold" style={{ color: "#22c55e" }}>R$ {fmt(data.receitaProjetadaMes)}</p>
+                <p className="text-base font-bold" style={{ color: "#22c55e" }}>R$ {fmt(data.receitaProjetadaMes)}</p>
               </div>
             </div>
 
             {/* Comparativo do dia */}
-            <div className="rounded-lg p-3 flex items-center justify-between"
+            <div className="rounded-lg px-3 py-2 flex items-center justify-between"
               style={{
                 background: data.variacaoDia >= 0 ? "#f0fdf4" : "#fef2f2",
                 border: `1px solid ${data.variacaoDia >= 0 ? "#bbf7d0" : "#fecaca"}`,
               }}>
               <div>
-                <p className="text-xs font-semibold mb-1.5" style={{ color: "var(--text-muted)" }}>
-                  Hoje (dia {new Date().getDate()}) vs média histórica do mesmo dia
+                <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>
+                  Hoje (dia {new Date().getDate()}) vs média histórica
                 </p>
-                <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-3 text-xs">
                   <div>
-                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>Hoje</p>
+                    <p style={{ color: "var(--text-muted)" }}>Hoje</p>
                     <p className="font-bold" style={{ color: "var(--text)" }}>R$ {fmt(data.receitaHoje)}</p>
                   </div>
                   <span style={{ color: "var(--text-muted)" }}>vs</span>
                   <div>
-                    <p className="text-xs" style={{ color: "var(--text-muted)" }}>Média dia ({data.base}m)</p>
+                    <p style={{ color: "var(--text-muted)" }}>Média ({data.base}m)</p>
                     <p className="font-bold" style={{ color: "var(--text)" }}>R$ {fmt(data.mediaDiaHoje)}</p>
                   </div>
                 </div>
               </div>
               <div className="flex flex-col items-end gap-0.5"
                 style={{ color: data.variacaoDia > 0 ? "#15803d" : data.variacaoDia < 0 ? "#b91c1c" : "var(--text-muted)" }}>
-                <div className="flex items-center gap-1.5 text-sm font-bold">
-                  {data.variacaoDia > 0 ? <TrendingUp size={16} />
-                    : data.variacaoDia < 0 ? <TrendingDown size={16} />
-                      : <Minus size={16} />}
+                <div className="flex items-center gap-1 text-xs font-bold">
+                  {data.variacaoDia > 0 ? <TrendingUp size={13} />
+                    : data.variacaoDia < 0 ? <TrendingDown size={13} />
+                      : <Minus size={13} />}
                   {data.variacaoDia > 0 ? "+" : ""}{data.variacaoDiaPct.toFixed(1)}%
                 </div>
                 <span className="text-xs font-semibold">
@@ -143,29 +138,27 @@ export default function ProjecaoSaldo() {
             </div>
 
             {/* Receita do mês */}
-            <div className="rounded-lg p-3 flex flex-col gap-2"
+            <div className="rounded-lg px-3 py-2 flex items-center gap-4 text-xs"
               style={{ background: "var(--surface2)", border: "1px solid var(--border)" }}>
-              <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
-                Receita do mês ({data.diasPassados}/{data.diasMes} dias)
-              </p>
-              <div className="flex gap-3 text-xs">
-                <div className="flex-1">
-                  <p style={{ color: "var(--text-muted)" }}>Real até hoje</p>
-                  <p className="font-semibold" style={{ color: "var(--text)" }}>R$ {fmt(data.receitaReal)}</p>
-                </div>
-                <div className="flex justify-between">
-                  <span>+ Estimado restante do mês</span>
-                  <span style={{ color: "#22c55e" }}>+ R$ {fmt(data.totalProjetadoRestante)}</span>
-                </div>
-                <div className="flex-1">
-                  <p style={{ color: "var(--text-muted)" }}>= Total projetado</p>
-                  <p className="font-semibold" style={{ color: "#22c55e" }}>R$ {fmt(data.receitaProjetadaMes)}</p>
-                </div>
+              <span style={{ color: "var(--text-muted)" }}>Receita ({data.diasPassados}/{data.diasMes}d)</span>
+              <div>
+                <p style={{ color: "var(--text-muted)" }}>Real</p>
+                <p className="font-semibold" style={{ color: "var(--text)" }}>R$ {fmt(data.receitaReal)}</p>
+              </div>
+              <span style={{ color: "var(--text-muted)" }}>+</span>
+              <div>
+                <p style={{ color: "var(--text-muted)" }}>Estimado</p>
+                <p className="font-semibold" style={{ color: "#22c55e" }}>R$ {fmt(data.totalProjetadoRestante)}</p>
+              </div>
+              <span style={{ color: "var(--text-muted)" }}>=</span>
+              <div>
+                <p style={{ color: "var(--text-muted)" }}>Total</p>
+                <p className="font-semibold" style={{ color: "#22c55e" }}>R$ {fmt(data.receitaProjetadaMes)}</p>
               </div>
             </div>
 
             {/* Detalhamento */}
-            <div className="text-xs flex flex-col gap-1.5 pt-1 border-t"
+            <div className="text-xs flex flex-col gap-1 pt-1 border-t"
               style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}>
               <div className="flex justify-between">
                 <span>Saldo atual</span>

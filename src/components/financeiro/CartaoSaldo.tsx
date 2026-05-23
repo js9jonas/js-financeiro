@@ -22,18 +22,18 @@ export function CartaoSaldo({ titulo, valor, descricao, cor = "neutro", prefixo 
 
   return (
     <div
-      className="rounded-xl p-4 flex flex-col gap-1 border"
+      className="rounded-xl px-3 py-2.5 flex flex-col gap-0.5 border"
       style={{ background: "var(--surface)", borderColor: "var(--border)" }}
     >
       <span className="text-xs font-medium uppercase tracking-wide" style={{ color: "var(--text-muted)" }}>
         {titulo}
       </span>
       <span
-        className="text-2xl font-bold"
+        className="text-lg font-bold"
         style={{ color: negativo ? "#f87171" : text }}
       >
         {prefixo} {Math.abs(valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-        {negativo && <span className="text-sm ml-1 opacity-70">(déficit)</span>}
+        {negativo && <span className="text-xs ml-1 opacity-70">(déficit)</span>}
       </span>
       {descricao && (
         <span className="text-xs" style={{ color: "var(--text-muted)" }}>{descricao}</span>
