@@ -54,7 +54,7 @@ const CardConta = memo(function CardConta({
 
   return (
     <div
-      className="rounded-xl border p-4 flex flex-col gap-3"
+      className="rounded-xl border p-3 flex flex-col gap-2"
       style={{
         background: "var(--surface)",
         borderColor: temDivergencia && confirmadoValido ? "#fbbf24" : "var(--border)"
@@ -62,7 +62,7 @@ const CardConta = memo(function CardConta({
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="w-3 h-3 rounded-full" style={{ background: conta.cor ?? "#64748b" }} />
+          <span className="w-2.5 h-2.5 rounded-full" style={{ background: conta.cor ?? "#64748b" }} />
           <span className="font-medium text-sm" style={{ color: "var(--text)" }}>{conta.nome}</span>
         </div>
         {conta.ajustado && (
@@ -74,19 +74,19 @@ const CardConta = memo(function CardConta({
 
       {conta.fluxo_caixa && (
         <div>
-          <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>Saldo calculado</p>
-          <p className="text-lg font-bold" style={{ color: saldoCalculado >= 0 ? "#0369a1" : "#ef4444" }}>
+          <p className="text-xs mb-0.5" style={{ color: "var(--text-muted)" }}>Saldo calculado</p>
+          <p className="text-base font-bold" style={{ color: saldoCalculado >= 0 ? "#0369a1" : "#ef4444" }}>
             R$ {fmt(saldoCalculado)}
           </p>
         </div>
       )}
 
       <div>
-        <p className="text-xs mb-1" style={{ color: "var(--text-muted)" }}>
+        <p className="text-xs mb-0.5" style={{ color: "var(--text-muted)" }}>
           {conta.fluxo_caixa ? "Saldo real (confirme com Enter)" : "Saldo atual"}
         </p>
         <input
-          className="w-full rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-400"
+          className="w-full rounded-lg px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-sky-400"
           style={{ background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" }}
           value={conta.saldoDigitado}
           onChange={e => onDigitar(conta.id, e.target.value)}
@@ -94,12 +94,12 @@ const CardConta = memo(function CardConta({
           onKeyDown={e => e.key === "Enter" && onConfirmar(conta.id)}
           onFocus={e => e.target.select()}
         />
-        {conta.erro && <p className="text-xs mt-1" style={{ color: "#ef4444" }}>{conta.erro}</p>}
+        {conta.erro && <p className="text-xs mt-0.5" style={{ color: "#ef4444" }}>{conta.erro}</p>}
       </div>
 
       {conta.fluxo_caixa && temDivergencia && confirmadoValido && (
         <div
-          className="rounded-lg px-3 py-2 flex items-center gap-2 text-xs"
+          className="rounded-lg px-3 py-1.5 flex items-center gap-2 text-xs"
           style={{
             background: diferenca > 0 ? "#f0fdf4" : "#fef2f2",
             color: diferenca > 0 ? "#15803d" : "#b91c1c"
@@ -121,7 +121,7 @@ const CardConta = memo(function CardConta({
         <button
           onClick={() => onAjustar(conta)}
           disabled={conta.ajustando}
-          className="w-full py-2 rounded-lg text-sm font-medium transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
+          className="w-full py-1.5 rounded-lg text-sm font-medium transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
           style={{ background: "#0ea5e9", color: "#fff" }}
         >
           {conta.ajustando
@@ -135,7 +135,7 @@ const CardConta = memo(function CardConta({
         <button
           onClick={() => onAtualizar(conta)}
           disabled={conta.ajustando}
-          className="w-full py-2 rounded-lg text-sm font-medium transition-opacity disabled:opacity-50"
+          className="w-full py-1.5 rounded-lg text-sm font-medium transition-opacity disabled:opacity-50"
           style={{ background: "var(--surface2)", color: "var(--text)", border: "1px solid var(--border)" }}
         >
           {conta.ajustando ? "Salvando..." : "Atualizar saldo"}
@@ -144,7 +144,7 @@ const CardConta = memo(function CardConta({
 
       <button
         onClick={() => onToggleFluxo(conta)}
-        className="w-full py-1.5 rounded-lg text-xs font-medium transition-opacity"
+        className="w-full py-1 rounded-lg text-xs font-medium transition-opacity"
         style={{
           background: conta.fluxo_caixa ? "#fef2f2" : "#f0fdf4",
           color: conta.fluxo_caixa ? "#b91c1c" : "#15803d",
@@ -276,28 +276,15 @@ export default function ContasPage() {
             Reconciliação e atualização de saldos
           </p>
         </div>
-        <button
-          onClick={carregar}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm"
-          style={{ background: "var(--surface2)", color: "var(--text-muted)", border: "1px solid var(--border)" }}
-        >
-          <RefreshCw size={14} /> Atualizar
-        </button>
-      </div>
-
-      <div
-        className="rounded-xl p-4 border flex items-center justify-between"
-        style={{ background: "var(--surface)", borderColor: "var(--border)" }}
-      >
-        <div>
+        <div className="text-right">
           <p className="text-xs uppercase tracking-wide font-medium" style={{ color: "var(--text-muted)" }}>
             Total Fluxo de Caixa
           </p>
-          <p className="text-2xl font-bold mt-1" style={{ color: totalFluxo >= 0 ? "#0369a1" : "#ef4444" }}>
+          <p className="text-xl font-bold mt-0.5" style={{ color: totalFluxo >= 0 ? "#0369a1" : "#ef4444" }}>
             R$ {fmt(totalFluxo)}
           </p>
+          <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>{contasFluxo.length} contas</p>
         </div>
-        <p className="text-xs" style={{ color: "var(--text-muted)" }}>{contasFluxo.length} contas ativas</p>
       </div>
 
       <div>

@@ -546,26 +546,24 @@ export default function PagamentosPage() {
         </div>
       </div>
 
-      {/* Navegação mês */}
+      {/* Navegação mês + Busca */}
       <div className="flex items-center gap-3">
-        <button onClick={() => navMes(-1)} className="p-1.5 rounded-lg"
+        <button onClick={() => navMes(-1)} className="p-1.5 rounded-lg shrink-0"
           style={{ background: "var(--surface2)", color: "var(--text-muted)" }}>
           <ChevronLeft size={16} />
         </button>
-        <span className="text-base font-semibold" style={{ color: "var(--text)", minWidth: 160, textAlign: "center" }}>
+        <span className="text-base font-semibold shrink-0" style={{ color: "var(--text)", minWidth: 140, textAlign: "center" }}>
           {MESES[mes - 1]} {ano}
         </span>
-        <button onClick={() => navMes(1)} className="p-1.5 rounded-lg"
+        <button onClick={() => navMes(1)} className="p-1.5 rounded-lg shrink-0"
           style={{ background: "var(--surface2)", color: "var(--text-muted)" }}>
           <ChevronRight size={16} />
         </button>
+        <input type="text" placeholder="Buscar por descrição ou observação..."
+          value={busca} onChange={e => setBusca(e.target.value)}
+          className="flex-1 rounded-lg px-4 py-2 text-sm outline-none"
+          style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)" }} />
       </div>
-
-      {/* Busca */}
-      <input type="text" placeholder="Buscar por descrição ou observação..."
-        value={busca} onChange={e => setBusca(e.target.value)}
-        className="w-full rounded-lg px-4 py-2.5 text-sm outline-none"
-        style={{ background: "var(--surface)", border: "1px solid var(--border)", color: "var(--text)" }} />
 
       {/* Formulário novo */}
       {mostraForm && (
