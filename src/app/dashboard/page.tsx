@@ -11,7 +11,8 @@ interface ContaComSaldoEFluxo extends ContaComSaldo {
 
 async function getDashboardData() {
   const contasFluxo = await query<ContaComSaldoEFluxo>(`
-    SELECT * FROM privado.v_saldo_contas WHERE fluxo_caixa = true ORDER BY nome
+    SELECT * FROM privado.v_saldo_contas WHERE fluxo_caixa = true
+    ORDER BY CASE id WHEN 1 THEN 1 WHEN 5 THEN 2 WHEN 2 THEN 3 WHEN 3 THEN 4 WHEN 4 THEN 5 WHEN 11 THEN 6 ELSE 99 END
   `);
   const saldoTotal = contasFluxo.reduce((acc, c) => acc + Number(c.saldo_atual), 0);
 
