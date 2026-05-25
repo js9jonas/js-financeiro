@@ -1,9 +1,9 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, CalendarClock, PlusCircle, Wallet, History } from "lucide-react";
+import { LayoutDashboard, CalendarClock, PlusCircle, Wallet, History, TrendingUp, LogOut } from "lucide-react";
 import clsx from "clsx";
-import { TrendingUp } from "lucide-react";
+import { signOut } from "next-auth/react";
 
 const nav = [
   { href: "/dashboard",   label: "Dashboard",   icon: LayoutDashboard },
@@ -40,6 +40,15 @@ export default function Sidebar() {
           {label}
         </Link>
       ))}
+      <div className="flex-1" />
+      <button
+        onClick={() => signOut({ callbackUrl: "/login" })}
+        className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors w-full"
+        style={{ color: "var(--text-muted)" }}
+      >
+        <LogOut size={18} />
+        Sair
+      </button>
     </aside>
   );
 }
