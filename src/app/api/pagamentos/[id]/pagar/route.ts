@@ -3,9 +3,10 @@ import { query } from "@/lib/db";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const id = Number(params.id);
+  const { id: rawId } = await params;
+  const id = Number(rawId);
   const { valor, conta_id, mes, ano } = await req.json();
   const hoje = new Date().toISOString().split("T")[0];
 

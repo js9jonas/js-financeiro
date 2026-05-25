@@ -3,9 +3,10 @@ import { query } from "@/lib/db";
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const id = Number(params.id);
+  const { id: rawId } = await params;
+  const id = Number(rawId);
   const body = await req.json();
   const { descricao, tipo_despesa, valor_padrao, dia_vencimento, conta_id, observacao, ativo } = body;
 
@@ -31,9 +32,10 @@ export async function PATCH(
 
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const id = Number(params.id);
+  const { id: rawId } = await params;
+  const id = Number(rawId);
   try {
     await query(`DELETE FROM privado.recorrentes WHERE id = $1`, [id]);
     return NextResponse.json({ ok: true });

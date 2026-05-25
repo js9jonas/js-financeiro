@@ -3,10 +3,11 @@ import { query } from "@/lib/db";
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id: rawId } = await params;
+  const id = Number(rawId);
   const { saldo_inicial, fluxo_caixa } = await req.json();
-  const id = Number(params.id);
 
   try {
     const rows = await query(
