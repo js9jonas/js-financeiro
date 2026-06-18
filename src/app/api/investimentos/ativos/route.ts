@@ -15,12 +15,13 @@ export async function GET() {
         COALESCE(SUM(c.quantidade * c.preco_unitario + COALESCE(c.taxas, 0)), 0) AS custo_total,
         p.preco_atual,
         p.variacao_dia,
-        p.atualizado_em
+        p.atualizado_em,
+        p.sem_cotacao
       FROM privado.investimentos_ativos a
       LEFT JOIN privado.investimentos_compras c ON c.ativo_id = a.id
       LEFT JOIN privado.investimentos_precos p ON p.ativo_id = a.id
       WHERE a.ativo = TRUE
-      GROUP BY a.id, p.preco_atual, p.variacao_dia, p.atualizado_em
+      GROUP BY a.id, p.preco_atual, p.variacao_dia, p.atualizado_em, p.sem_cotacao
       ORDER BY a.tipo, a.ticker
     `);
     return NextResponse.json(rows);

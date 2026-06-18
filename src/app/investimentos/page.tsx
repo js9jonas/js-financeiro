@@ -22,6 +22,7 @@ interface Ativo {
   preco_atual: number | null;
   variacao_dia: number | null;
   atualizado_em: string | null;
+  sem_cotacao: boolean | null;
 }
 
 interface Compra {
@@ -300,7 +301,19 @@ export default function InvestimentosPage() {
                             <button className="flex items-center gap-2 text-left"
                               onClick={() => toggleAtivo(a.id)}>
                               <div>
-                                <p className="font-bold text-sm" style={{ color: cor }}>{a.ticker}</p>
+                                <div className="flex items-center gap-1.5">
+                                  <p className="font-bold text-sm" style={{ color: cor }}>{a.ticker}</p>
+                                  {a.sem_cotacao && (
+                                    <span title="Cotação indisponível — atualize o preço manualmente"
+                                      style={{
+                                        fontSize: 10, fontWeight: 700, padding: "1px 5px",
+                                        borderRadius: 4, background: "#fef3c7", color: "#92400e",
+                                        cursor: "help",
+                                      }}>
+                                      ⚠️ s/ cotação
+                                    </span>
+                                  )}
+                                </div>
                                 <p className="text-xs" style={{ color: "var(--text-muted)" }}>{a.nome}</p>
                               </div>
                               {ativoAberto

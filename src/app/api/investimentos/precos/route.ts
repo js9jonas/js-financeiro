@@ -81,22 +81,36 @@ export async function POST() {
     console.log("Preços encontrados:", Object.keys(todosPrecos));
     let atualizados = 0;
 
+    const semCotacao: string[] = [];
+
     for (const ativo of ativos) {
       const preco = todosPrecos[ativo.ticker];
-      if (!preco) continue;
+
+      if (!preco || !preco.preco) {
+        // Preço não encontrado ou zerado: preserva valor anterior, sinaliza o ativo
+        await query(`
+          INSERT INTO privado.investimentos_precos (ativo_id, preco_atual, variacao_dia, atualizado_em, sem_cotacao)
+          VALUES ($1, 0, NULL, NOW(), TRUE)
+          ON CONFLICT (ativo_id) DO UPDATE
+            SET sem_cotacao = TRUE, atualizado_em = NOW()
+        `, [ativo.id]);
+        semCotacao.push(ativo.ticker);
+        continue;
+      }
 
       await query(`
-        INSERT INTO privado.investimentos_precos (ativo_id, preco_atual, variacao_dia, atualizado_em)
-        VALUES ($1, $2, $3, NOW())
+        INSERT INTO privado.investimentos_precos (ativo_id, preco_atual, variacao_dia, atualizado_em, sem_cotacao)
+        VALUES ($1, $2, $3, NOW(), FALSE)
         ON CONFLICT (ativo_id) DO UPDATE
           SET preco_atual = EXCLUDED.preco_atual,
               variacao_dia = EXCLUDED.variacao_dia,
-              atualizado_em = NOW()
+              atualizado_em = NOW(),
+              sem_cotacao = FALSE
       `, [ativo.id, preco.preco, preco.variacao]);
       atualizados++;
     }
 
-    return NextResponse.json({ atualizados, total: ativos.length });
+    return NextResponse.json({ atualizados, total: ativos.length, sem_cotacao: semCotacao });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Erro ao atualizar preços" }, { status: 500 });
@@ -107,10 +121,10 @@ export async function PATCH(req: Request) {
   try {
     const { ativo_id, preco_atual } = await req.json();
     await query(`
-      INSERT INTO privado.investimentos_precos (ativo_id, preco_atual, variacao_dia, atualizado_em)
-      VALUES ($1, $2, 0, NOW())
+      INSERT INTO privado.investimentos_precos (ativo_id, preco_atual, variacao_dia, atualizado_em, sem_cotacao)
+      VALUES ($1, $2, 0, NOW(), FALSE)
       ON CONFLICT (ativo_id) DO UPDATE
-        SET preco_atual = EXCLUDED.preco_atual, atualizado_em = NOW()
+        SET preco_atual = EXCLUDED.preco_atual, atualizado_em = NOW(), sem_cotacao = FALSE
     `, [ativo_id, preco_atual]);
     return NextResponse.json({ ok: true });
   } catch (error) {
