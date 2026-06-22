@@ -1,6 +1,6 @@
 "use client";
-import { useEffect, useState, useCallback, memo } from "react";
-import { Plus, Pencil, Check, X, CreditCard, Trash2, ChevronLeft, ChevronRight, RefreshCw } from "lucide-react";
+import { useEffect, useState, useCallback, memo, useRef, useMemo } from "react";
+import { Plus, Pencil, Check, X, CreditCard, Trash2, ChevronLeft, ChevronRight, RefreshCw, Calendar } from "lucide-react";
 import { TIPO_DESPESA_LABEL, TIPO_DESPESA_COR, type TipoDespesa } from "@/types/financeiro";
 export const dynamic = 'force-dynamic';
 
@@ -115,6 +115,144 @@ const thSty = {
   fontSize: 11, fontWeight: 600, textTransform: "uppercase" as const, letterSpacing: "0.05em",
 };
 
+// ── DatePicker ────────────────────────────────────────────────────────────────
+function DatePicker({ value, onChange, inputStyle, inputClass }: {
+  value: string; // dd/mm/aaaa
+  onChange: (v: string) => void;
+  inputStyle?: React.CSSProperties;
+  inputClass?: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  const parsed = useMemo(() => {
+    const parts = value.split("/");
+    if (parts.length === 3 && parts[2].length === 4) {
+      const y = parseInt(parts[2]), m = parseInt(parts[1]) - 1, d = parseInt(parts[0]);
+      if (!isNaN(y) && !isNaN(m) && !isNaN(d)) return { year: y, month: m, day: d };
+    }
+    return null;
+  }, [value]);
+
+  const [viewYear, setViewYear] = useState(() => parsed?.year ?? new Date().getFullYear());
+  const [viewMonth, setViewMonth] = useState(() => parsed?.month ?? new Date().getMonth());
+
+  useEffect(() => {
+    if (!open) return;
+    function handler(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [open]);
+
+  function openCalendar() {
+    if (parsed) { setViewYear(parsed.year); setViewMonth(parsed.month); }
+    setOpen(true);
+  }
+
+  function navMonth(dir: number) {
+    let m = viewMonth + dir, y = viewYear;
+    if (m > 11) { m = 0; y++; }
+    if (m < 0) { m = 11; y--; }
+    setViewMonth(m); setViewYear(y);
+  }
+
+  function selectDay(day: number) {
+    const dd = String(day).padStart(2, "0");
+    const mm = String(viewMonth + 1).padStart(2, "0");
+    onChange(`${dd}/${mm}/${viewYear}`);
+    setOpen(false);
+  }
+
+  const firstDayOfWeek = (new Date(viewYear, viewMonth, 1).getDay() + 6) % 7; // Mon=0
+  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  const cells: (number | null)[] = [];
+  for (let i = 0; i < firstDayOfWeek; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+  while (cells.length % 7 !== 0) cells.push(null);
+
+  const today = new Date();
+  const isToday = (d: number) => today.getDate() === d && today.getMonth() === viewMonth && today.getFullYear() === viewYear;
+  const isSelected = (d: number) => !!parsed && parsed.day === d && parsed.month === viewMonth && parsed.year === viewYear;
+
+  const mergedInputStyle: React.CSSProperties = { ...(inputStyle ?? inputSty), paddingRight: 28 };
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+        <input
+          style={mergedInputStyle}
+          className={inputClass}
+          placeholder="dd/mm/aaaa"
+          value={value}
+          maxLength={10}
+          onChange={e => onChange(maskDate(e.target.value, value))}
+        />
+        <button type="button" onClick={openCalendar} style={{
+          position: "absolute", right: 6, background: "none", border: "none",
+          cursor: "pointer", color: "var(--text-muted)", display: "flex", padding: 0,
+        }}>
+          <Calendar size={13} />
+        </button>
+      </div>
+
+      {open && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 4px)", left: 0, zIndex: 200,
+          background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 10,
+          boxShadow: "0 8px 28px rgba(0,0,0,0.22)", padding: 12, minWidth: 230,
+        }}>
+          {/* Navegação de mês */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+            <button onClick={() => navMonth(-1)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: 2 }}>
+              <ChevronLeft size={14} />
+            </button>
+            <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text)" }}>
+              {MESES[viewMonth]} {viewYear}
+            </span>
+            <button onClick={() => navMonth(1)} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-muted)", padding: 2 }}>
+              <ChevronRight size={14} />
+            </button>
+          </div>
+
+          {/* Cabeçalho semana (Seg–Dom) */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2, marginBottom: 4 }}>
+            {["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"].map(d => (
+              <div key={d} style={{ textAlign: "center", fontSize: 10, fontWeight: 600, color: "var(--text-muted)" }}>{d}</div>
+            ))}
+          </div>
+
+          {/* Dias */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2 }}>
+            {cells.map((d, i) => (
+              <button key={i} disabled={!d} onClick={() => d && selectDay(d)} style={{
+                textAlign: "center", fontSize: 12, padding: "5px 0", borderRadius: 6, border: "none",
+                cursor: d ? "pointer" : "default",
+                background: d && isSelected(d) ? "#0ea5e9" : d && isToday(d) ? "#0ea5e922" : "transparent",
+                color: d && isSelected(d) ? "#fff" : d && isToday(d) ? "#0ea5e9" : d ? "var(--text)" : "transparent",
+                fontWeight: d && (isSelected(d) || isToday(d)) ? 700 : 400,
+              }}>{d ?? ""}</button>
+            ))}
+          </div>
+
+          {/* Botão Hoje */}
+          <div style={{ borderTop: "1px solid var(--border)", marginTop: 8, paddingTop: 8, textAlign: "center" }}>
+            <button onClick={() => {
+              const t = new Date();
+              selectDay(t.getDate());
+              setViewMonth(t.getMonth());
+              setViewYear(t.getFullYear());
+            }} style={{ fontSize: 11, color: "#0ea5e9", background: "none", border: "none", cursor: "pointer", fontWeight: 600 }}>
+              Hoje
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Card ──────────────────────────────────────────────────────────────────────
 const CardItem = memo(function CardItem({ item, contas, mes, ano, onPagar, onSalvar, onDesativar, onToggleRecorrente, busca }: {
   item: Item; contas: Conta[]; mes: number; ano: number;
@@ -178,9 +316,9 @@ const CardItem = memo(function CardItem({ item, contas, mes, ano, onPagar, onSal
               onChange={e => setForm(f => ({ ...f, valor: e.target.value }))} />
           </div>
           <div>
-            <p className="text-xs mb-0.5" style={{ color: "var(--text-muted)" }}>Vencimento (dd/mm/aaaa)</p>
-            <input style={inputSty} placeholder="dd/mm/aaaa" value={form.data_vencimento} maxLength={10}
-              onChange={e => setForm(f => ({ ...f, data_vencimento: maskDate(e.target.value, f.data_vencimento) }))} />
+            <p className="text-xs mb-0.5" style={{ color: "var(--text-muted)" }}>Vencimento</p>
+            <DatePicker value={form.data_vencimento}
+              onChange={v => setForm(f => ({ ...f, data_vencimento: v }))} />
           </div>
           <div>
             <p className="text-xs mb-0.5" style={{ color: "var(--text-muted)" }}>Tipo</p>
@@ -583,10 +721,10 @@ export default function PagamentosPage() {
                 value={novoForm.valor} onChange={e => setNovoForm(f => ({ ...f, valor: e.target.value }))} />
             </div>
             <div>
-              <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Vencimento (dd/mm/aaaa)</label>
-              <input className="w-full rounded-lg px-3 py-2 text-sm outline-none" placeholder="dd/mm/aaaa"
-                style={{ background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" }}
-                value={novoForm.data_vencimento} maxLength={10} onChange={e => setNovoForm(f => ({ ...f, data_vencimento: maskDate(e.target.value, f.data_vencimento) }))} />
+              <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Vencimento</label>
+              <DatePicker value={novoForm.data_vencimento}
+                onChange={v => setNovoForm(f => ({ ...f, data_vencimento: v }))}
+                inputStyle={{ background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)", borderRadius: 8, padding: "8px 28px 8px 12px", fontSize: 14, width: "100%" }} />
             </div>
             <div>
               <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Tipo</label>
