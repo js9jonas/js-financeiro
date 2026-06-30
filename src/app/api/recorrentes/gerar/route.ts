@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 
 export async function POST(req: NextRequest) {
-  const { mes, ano } = await req.json();
+  const { mes, ano, forcar } = await req.json();
 
   try {
     // Verifica se já foi gerado
@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
       [mes, ano]
     );
 
-    if (jaGerado.length > 0) {
+    if (jaGerado.length > 0 && !forcar) {
       return NextResponse.json({ ok: true, jaGerado: true, quantidade: 0 });
     }
 
@@ -47,11 +47,18 @@ export async function POST(req: NextRequest) {
       gerados++;
     }
 
-    // Registra geração
-    await query(
-      `INSERT INTO privado.recorrentes_gerados (mes, ano, quantidade) VALUES ($1, $2, $3)`,
-      [mes, ano, gerados]
-    );
+    // Registra geração (atualiza acumulando se já existia)
+    if (jaGerado.length > 0) {
+      await query(
+        `UPDATE privado.recorrentes_gerados SET quantidade = quantidade + $1 WHERE mes = $2 AND ano = $3`,
+        [gerados, mes, ano]
+      );
+    } else {
+      await query(
+        `INSERT INTO privado.recorrentes_gerados (mes, ano, quantidade) VALUES ($1, $2, $3)`,
+        [mes, ano, gerados]
+      );
+    }
 
     return NextResponse.json({ ok: true, jaGerado: false, quantidade: gerados });
   } catch (e) {

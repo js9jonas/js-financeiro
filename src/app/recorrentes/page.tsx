@@ -47,6 +47,7 @@ export default function RecorrentesPage() {
   const [salvando, setSalvando] = useState(false);
   const [statusGeracao, setStatusGeracao] = useState<{ gerado: boolean; quantidade?: number } | null>(null);
   const [gerando, setGerando] = useState(false);
+  const [confirmarReGeracao, setConfirmarReGeracao] = useState(false);
 
   const now = new Date();
   const mes = now.getMonth() + 1;
@@ -128,12 +129,13 @@ export default function RecorrentesPage() {
     carregar();
   };
 
-  const gerarMes = async () => {
+  const gerarMes = async (forcar = false) => {
     setGerando(true);
+    setConfirmarReGeracao(false);
     const res = await fetch("/api/recorrentes/gerar", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mes, ano }),
+      body: JSON.stringify({ mes, ano, forcar }),
     });
     const data = await res.json();
     setStatusGeracao({ gerado: true, quantidade: data.quantidade });
@@ -181,7 +183,7 @@ export default function RecorrentesPage() {
           borderColor: statusGeracao?.gerado ? "#bbf7d0" : "#fde68a",
         }}
       >
-        <div>
+        <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold" style={{ color: statusGeracao?.gerado ? "#15803d" : "#92400e" }}>
             {statusGeracao?.gerado
               ? `✓ Mês ${mes}/${ano} já gerado — ${statusGeracao.quantidade ?? "?"} lançamentos criados`
@@ -191,15 +193,46 @@ export default function RecorrentesPage() {
           <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
             Previsão mensal: R$ {fmt(totalMensal)} ({ativos.length} recorrentes ativos)
           </p>
+          {confirmarReGeracao && (
+            <div className="mt-2 flex items-center gap-2 flex-wrap">
+              <p className="text-xs font-medium" style={{ color: "#b45309" }}>
+                Isso criará {ativos.length} lançamento(s) duplicados. Confirma?
+              </p>
+              <button
+                onClick={() => gerarMes(true)}
+                disabled={gerando}
+                className="px-3 py-1 rounded text-xs font-medium disabled:opacity-50"
+                style={{ background: "#ef4444", color: "#fff" }}
+              >
+                {gerando ? "Gerando..." : "Sim, gerar novamente"}
+              </button>
+              <button
+                onClick={() => setConfirmarReGeracao(false)}
+                className="px-3 py-1 rounded text-xs"
+                style={{ background: "var(--surface2)", color: "var(--text-muted)", border: "1px solid var(--border)" }}
+              >
+                Cancelar
+              </button>
+            </div>
+          )}
         </div>
-        {!statusGeracao?.gerado && (
+        {!statusGeracao?.gerado ? (
           <button
-            onClick={gerarMes}
+            onClick={() => gerarMes(false)}
             disabled={gerando}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 shrink-0"
             style={{ background: "#f59e0b", color: "#fff" }}
           >
             {gerando ? <><RefreshCw size={14} className="animate-spin" /> Gerando...</> : "Gerar agora"}
+          </button>
+        ) : !confirmarReGeracao && (
+          <button
+            onClick={() => setConfirmarReGeracao(true)}
+            disabled={gerando}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 shrink-0"
+            style={{ background: "var(--surface2)", color: "#b45309", border: "1px solid #fde68a" }}
+          >
+            <RefreshCw size={14} /> Gerar novamente
           </button>
         )}
       </div>
