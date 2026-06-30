@@ -7,7 +7,7 @@ export async function POST(
 ) {
   const { id: rawId } = await params;
   const id = Number(rawId);
-  const { valor, conta_id, mes, ano } = await req.json();
+  const { valor, conta_id, mes, ano, forcar } = await req.json();
   const hoje = new Date().toISOString().split("T")[0];
 
   try {
@@ -27,7 +27,7 @@ export async function POST(
         AND EXTRACT(YEAR  FROM data_pagamento) = $3
     `, [id, mes, ano]);
 
-    if (existente) {
+    if (existente && !forcar) {
       return NextResponse.json({ error: "Já registrado neste mês" }, { status: 409 });
     }
 

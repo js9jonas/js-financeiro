@@ -256,7 +256,7 @@ function DatePicker({ value, onChange, inputStyle, inputClass }: {
 // ── Card ──────────────────────────────────────────────────────────────────────
 const CardItem = memo(function CardItem({ item, contas, mes, ano, onPagar, onSalvar, onDesativar, onToggleRecorrente, busca }: {
   item: Item; contas: Conta[]; mes: number; ano: number;
-  onPagar: (id: number, valor: number, conta_id: number | null) => void;
+  onPagar: (id: number, valor: number, conta_id: number | null, forcar?: boolean) => Promise<"ok" | "jaRegistrado" | "erro">;
   onSalvar: (id: number, form: EditForm) => void;
   onDesativar: (id: number) => void;
   onToggleRecorrente: (id: number, recorrente: boolean) => void;
@@ -264,6 +264,7 @@ const CardItem = memo(function CardItem({ item, contas, mes, ano, onPagar, onSal
 }) {
   const [editando, setEditando] = useState(false);
   const [pagando, setPagando] = useState(false);
+  const [jaRegistrado, setJaRegistrado] = useState(false);
   const [form, setForm] = useState<EditForm>({
 
     descricao: item.descricao,
@@ -472,18 +473,43 @@ const CardItem = memo(function CardItem({ item, contas, mes, ano, onPagar, onSal
                   {contas.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
                 </select>
               </div>
-              <button onClick={() => {
-                const v = parseBR(valorPgto);
-                const c = contaPgto ? parseInt(contaPgto) : item.conta_id;
-                onPagar(item.id, isNaN(v) ? item.valor : v, c);
-                setPagando(false);
-              }} className="flex items-center gap-1 px-4 py-1.5 rounded-lg text-sm font-medium"
-                style={{ background: "#16a34a", color: "#fff" }}>
-                <Check size={14} /> Confirmar
-              </button>
-              <button onClick={() => setPagando(false)} className="p-1.5" style={{ color: "#166534" }}>
-                <X size={14} />
-              </button>
+              {!jaRegistrado ? (
+                <button onClick={async () => {
+                  const v = parseBR(valorPgto);
+                  const c = contaPgto ? parseInt(contaPgto) : item.conta_id;
+                  const resultado = await onPagar(item.id, isNaN(v) ? item.valor : v, c);
+                  if (resultado === "jaRegistrado") { setJaRegistrado(true); }
+                  else { setPagando(false); setJaRegistrado(false); }
+                }} className="flex items-center gap-1 px-4 py-1.5 rounded-lg text-sm font-medium"
+                  style={{ background: "#16a34a", color: "#fff" }}>
+                  <Check size={14} /> Confirmar
+                </button>
+              ) : (
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-medium" style={{ color: "#b45309" }}>
+                    Já registrado neste mês. Registrar novamente?
+                  </span>
+                  <button onClick={async () => {
+                    const v = parseBR(valorPgto);
+                    const c = contaPgto ? parseInt(contaPgto) : item.conta_id;
+                    await onPagar(item.id, isNaN(v) ? item.valor : v, c, true);
+                    setPagando(false); setJaRegistrado(false);
+                  }} className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium"
+                    style={{ background: "#ef4444", color: "#fff" }}>
+                    <Check size={12} /> Sim, registrar
+                  </button>
+                  <button onClick={() => { setPagando(false); setJaRegistrado(false); }}
+                    className="px-3 py-1.5 rounded-lg text-xs"
+                    style={{ background: "var(--surface2)", color: "var(--text-muted)", border: "1px solid var(--border)" }}>
+                    Cancelar
+                  </button>
+                </div>
+              )}
+              {!jaRegistrado && (
+                <button onClick={() => { setPagando(false); setJaRegistrado(false); }} className="p-1.5" style={{ color: "#166534" }}>
+                  <X size={14} />
+                </button>
+              )}
             </div>
           </td>
         </tr>
@@ -533,13 +559,15 @@ export default function PagamentosPage() {
     setMes(m); setAno(a);
   }
 
-  const pagar = useCallback(async (id: number, valor: number, conta_id: number | null) => {
+  const pagar = useCallback(async (id: number, valor: number, conta_id: number | null, forcar = false): Promise<"ok" | "jaRegistrado" | "erro"> => {
     const res = await fetch(`/api/pagamentos/${id}/pagar`, {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ valor, conta_id, mes, ano }),
+      body: JSON.stringify({ valor, conta_id, mes, ano, forcar }),
     });
-    if (!res.ok) { const e = await res.json(); alert("Erro: " + e.error); return; }
+    if (res.status === 409) return "jaRegistrado";
+    if (!res.ok) { const e = await res.json(); alert("Erro: " + e.error); return "erro"; }
     carregar(mes, ano);
+    return "ok";
   }, [mes, ano, carregar]);
 
   const salvar = useCallback(async (id: number, f: EditForm) => {
