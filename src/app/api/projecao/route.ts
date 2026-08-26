@@ -164,13 +164,26 @@ export async function GET(req: NextRequest) {
       media: Number(r.media_dia),
     }));
     const totalProjetadoRestante = projecaoDiaria.reduce((acc, d) => acc + d.media, 0);
-    const receitaProjetadaMes = receitaReal + totalProjetadoRestante;
-    const projecao = saldoAtual + totalProjetadoRestante - pendenteMes;
+
+    // `receitaReal` já inclui o que entrou hoje (data_pgto <= CURRENT_DATE), então ela sozinha
+    // subestima o dia atual enquanto ele ainda não terminou: um dia que só recebeu R$50 até
+    // agora não significa que vai fechar em R$50. Em vez de projetar hoje só pelo que já
+    // entrou, usamos o maior entre o valor real e a média histórica desse dia do mês — se já
+    // entrou mais que a média, confia no valor real (não limita pra baixo); se entrou menos,
+    // assume que o resto do dia completa até a média.
+    const ajusteHoje = Math.max(0, mediaDiaHoje - receitaHoje);
+    const valorHojeProjetado = receitaHoje + ajusteHoje; // = Math.max(receitaHoje, mediaDiaHoje)
+
+    const receitaProjetadaMes = receitaReal + ajusteHoje + totalProjetadoRestante;
+    // saldoAtual já reflete o dinheiro real que entrou hoje — só soma o ajuste (a diferença
+    // pra média, quando positiva) pra não contar receitaHoje duas vezes.
+    const projecao = saldoAtual + ajusteHoje + totalProjetadoRestante - pendenteMes;
     const variacaoDia = receitaHoje - mediaDiaHoje;
     const variacaoDiaPct = mediaDiaHoje > 0 ? (variacaoDia / mediaDiaHoje) * 100 : 0;
 
     return NextResponse.json({
       saldoAtual, receitaReal, receitaHoje, mediaDiaHoje,
+      valorHojeProjetado, ajusteHoje,
       receitaProjetadaMes, totalProjetadoRestante, projecaoDiaria,
       graficoDias,
       diasMes, diasPassados, diasRestantes,

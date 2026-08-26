@@ -12,6 +12,8 @@ interface ProjecaoData {
   receitaReal: number;
   receitaHoje: number;
   mediaDiaHoje: number;
+  valorHojeProjetado: number;
+  ajusteHoje: number;
   receitaProjetadaMes: number;
   totalProjetadoRestante: number;
   diasMes: number;
@@ -158,19 +160,29 @@ export default function ProjecaoSaldo() {
             </div>
 
             {/* Detalhamento */}
+            {/* Saldo atual já reflete a receita real recebida até agora (incl. hoje) — por isso
+                a partir daqui só soma o que ainda FALTA entrar: o ajuste de hoje até a média
+                (quando o dia ainda não atingiu a média histórica) + a média dos dias restantes,
+                menos as despesas que ainda vão sair (pendentes; as já pagas já saíram do saldo). */}
             <div className="text-xs flex flex-col gap-1 pt-1 border-t"
               style={{ borderColor: "var(--border)", color: "var(--text-muted)" }}>
               <div className="flex justify-between">
                 <span>Saldo atual</span>
                 <span style={{ color: "var(--text)" }}>R$ {fmt(data.saldoAtual)}</span>
               </div>
+              {data.ajusteHoje > 0 && (
+                <div className="flex justify-between">
+                  <span>+ Ajuste de hoje (até a média)</span>
+                  <span style={{ color: "#22c55e" }}>+ R$ {fmt(data.ajusteHoje)}</span>
+                </div>
+              )}
               <div className="flex justify-between">
-                <span>+ Receita projetada do mês</span>
-                <span style={{ color: "#22c55e" }}>+ R$ {fmt(data.receitaProjetadaMes)}</span>
+                <span>+ Estimado dias restantes</span>
+                <span style={{ color: "#22c55e" }}>+ R$ {fmt(data.totalProjetadoRestante)}</span>
               </div>
               <div className="flex justify-between">
-                <span>− Projeção despesas mês atual</span>
-                <span style={{ color: "#ef4444" }}>− R$ {fmt(data.despesasMes)}</span>
+                <span>− Pendente do mês</span>
+                <span style={{ color: "#ef4444" }}>− R$ {fmt(data.pendenteMes)}</span>
               </div>
               <div className="flex justify-between font-semibold border-t pt-1.5"
                 style={{ borderColor: "var(--border)", color: "var(--text)" }}>
