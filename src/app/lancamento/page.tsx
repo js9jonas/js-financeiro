@@ -21,7 +21,7 @@ export default function LancamentoPage() {
   const [categoriaId, setCategoriaId] = useState("");
   const [contaId, setContaId] = useState("");
   const [dataVencimento, setDataVencimento] = useState(hoje);
-  const [dataPagamento, setDataPagamento] = useState("");
+  const [dataPagamento, setDataPagamento] = useState(hoje);
   const [observacao, setObservacao] = useState("");
   const [recorrente, setRecorrente] = useState(false);
 
@@ -49,7 +49,7 @@ export default function LancamentoPage() {
 
   const resetDespesa = () => {
     setDescricao(""); setValor(""); setTipoDespesa(""); setCategoriaId("");
-    setContaId(""); setDataVencimento(hoje); setDataPagamento(""); setObservacao(""); setRecorrente(false);
+    setContaId(""); setDataVencimento(hoje); setDataPagamento(hoje); setObservacao(""); setRecorrente(false);
   };
   const resetEntrada = () => {
     setEDescricao(""); setEValor(""); setEContaId(""); setECategoriaId(""); setEData(hoje); setEObs("");

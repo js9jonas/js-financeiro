@@ -62,8 +62,10 @@ interface Props {
   ativos: Ativo[];
 }
 
+const hoje = new Date().toISOString().split("T")[0];
+
 const FORM_VAZIO = {
-  ativo_id: "", data_pagamento: "", valor: "",
+  ativo_id: "", data_pagamento: hoje, valor: "",
   quantidade_na_data: "", tipo: "dividendo", observacao: "",
 };
 
@@ -319,7 +321,7 @@ export default function DividendosSection({ ativos }: Props) {
                     setForm(f => ({
                       ...f,
                       ativo_id: e.target.value,
-                      quantidade_na_data: ativo ? String(ativo.quantidade_total) : f.quantidade_na_data,
+                      quantidade_na_data: ativo ? String(Number(ativo.quantidade_total)) : f.quantidade_na_data,
                     }));
                   }}
                   disabled={!!editando}>

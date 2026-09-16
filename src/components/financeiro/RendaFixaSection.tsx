@@ -62,8 +62,10 @@ function parseBR(v: string) {
 const FORM_RF_VAZIO = {
   nome: "", instituicao: "", tipo: "cdb", rentabilidade: "", data_vencimento: "",
 };
+const hoje = new Date().toISOString().split("T")[0];
+
 const FORM_APORTE_VAZIO = {
-  data_aporte: "", valor: "", tipo: "aporte", observacao: "",
+  data_aporte: hoje, valor: "", tipo: "aporte", observacao: "",
 };
 
 export default function RendaFixaSection() {
