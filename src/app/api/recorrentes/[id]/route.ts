@@ -8,21 +8,23 @@ export async function PATCH(
   const { id: rawId } = await params;
   const id = Number(rawId);
   const body = await req.json();
-  const { descricao, tipo_despesa, valor_padrao, dia_vencimento, conta_id, observacao, ativo } = body;
+  const { descricao, tipo_despesa, valor_padrao, dia_vencimento, conta_id, observacao, ativo, tipo, conta_destino_id } = body;
 
   try {
     const [row] = await query(`
       UPDATE privado.recorrentes SET
-        descricao      = COALESCE($1, descricao),
-        tipo_despesa   = COALESCE($2::privado.tipo_despesa_enum, tipo_despesa),
-        valor_padrao   = COALESCE($3, valor_padrao),
-        dia_vencimento = COALESCE($4, dia_vencimento),
-        conta_id       = COALESCE($5, conta_id),
-        observacao     = COALESCE($6, observacao),
-        ativo          = COALESCE($7, ativo)
+        descricao        = COALESCE($1, descricao),
+        tipo_despesa     = COALESCE($2::privado.tipo_despesa_enum, tipo_despesa),
+        valor_padrao     = COALESCE($3, valor_padrao),
+        dia_vencimento   = COALESCE($4, dia_vencimento),
+        conta_id         = COALESCE($5, conta_id),
+        observacao       = COALESCE($6, observacao),
+        ativo            = COALESCE($7, ativo),
+        tipo             = COALESCE($9, tipo),
+        conta_destino_id = COALESCE($10, conta_destino_id)
       WHERE id = $8
       RETURNING *
-    `, [descricao, tipo_despesa || null, valor_padrao, dia_vencimento, conta_id || null, observacao, ativo, id]);
+    `, [descricao, tipo_despesa || null, valor_padrao, dia_vencimento, conta_id || null, observacao, ativo, id, tipo || null, conta_destino_id || null]);
     return NextResponse.json(row);
   } catch (e) {
     console.error(e);

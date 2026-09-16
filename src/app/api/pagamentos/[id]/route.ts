@@ -7,24 +7,27 @@ export async function PATCH(
 ) {
   const { id: rawId } = await params;
   const id = Number(rawId);
-  const { descricao, valor, tipo_despesa, data_vencimento, conta_id, observacao, recorrente } = await req.json();
+  const { descricao, valor, tipo_despesa, data_vencimento, conta_id, observacao, recorrente, tipo, conta_destino_id } = await req.json();
 
   try {
     const [row] = await query(`
       UPDATE privado.recorrentes SET
-        descricao       = $1,
-        valor_padrao    = $2,
-        tipo_despesa    = COALESCE($3::privado.tipo_despesa_enum, tipo_despesa),
-        data_vencimento = $4,
-        conta_id        = $5,
-        observacao      = $6,
-        recorrente      = $7
+        descricao        = $1,
+        valor_padrao     = $2,
+        tipo_despesa     = COALESCE($3::privado.tipo_despesa_enum, tipo_despesa),
+        data_vencimento  = $4,
+        conta_id         = $5,
+        observacao       = $6,
+        recorrente       = $7,
+        tipo             = COALESCE($9, tipo),
+        conta_destino_id = COALESCE($10, conta_destino_id)
       WHERE id = $8
       RETURNING *
     `, [
       descricao, valor, tipo_despesa || null,
       data_vencimento || null, conta_id || null,
       observacao || null, recorrente ?? true, id,
+      tipo || null, conta_destino_id || null,
     ]);
     return NextResponse.json(row ?? {});
   } catch (e) {

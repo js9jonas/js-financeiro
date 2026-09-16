@@ -20,6 +20,10 @@ interface Recorrente {
   conta_cor: string | null;
   observacao: string | null;
   ativo: boolean;
+  tipo: "despesa" | "transferencia";
+  conta_destino_id: number | null;
+  conta_destino_nome: string | null;
+  conta_destino_cor: string | null;
 }
 
 interface Conta {
@@ -35,6 +39,8 @@ const VAZIO = {
   dia_vencimento: "1",
   conta_id: "",
   observacao: "",
+  tipo: "despesa" as "despesa" | "transferencia",
+  conta_destino_id: "",
 };
 
 export default function RecorrentesPage() {
@@ -83,6 +89,8 @@ export default function RecorrentesPage() {
       dia_vencimento: String(r.dia_vencimento),
       conta_id: String(r.conta_id ?? ""),
       observacao: r.observacao ?? "",
+      tipo: r.tipo ?? "despesa",
+      conta_destino_id: String(r.conta_destino_id ?? ""),
     });
     setMostraForm(true);
   };
@@ -104,6 +112,8 @@ export default function RecorrentesPage() {
       dia_vencimento: parseInt(form.dia_vencimento),
       conta_id: form.conta_id ? parseInt(form.conta_id) : null,
       observacao: form.observacao || null,
+      tipo: form.tipo,
+      conta_destino_id: form.tipo === "transferencia" && form.conta_destino_id ? parseInt(form.conta_destino_id) : null,
     };
 
     const url = editando ? `/api/recorrentes/${editando}` : "/api/recorrentes";
@@ -276,21 +286,21 @@ export default function RecorrentesPage() {
               </select>
             </div>
             <div>
-              <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Tipo</label>
+              <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Natureza do lançamento</label>
               <select
                 className="w-full rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-400"
                 style={{ background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" }}
-                value={form.tipo_despesa}
-                onChange={e => setForm(f => ({ ...f, tipo_despesa: e.target.value }))}
+                value={form.tipo}
+                onChange={e => setForm(f => ({ ...f, tipo: e.target.value as "despesa" | "transferencia" }))}
               >
-                <option value="">— sem tipo —</option>
-                {Object.entries(TIPO_DESPESA_LABEL).map(([k, v]) => (
-                  <option key={k} value={k}>{v}</option>
-                ))}
+                <option value="despesa">Despesa (gasto real)</option>
+                <option value="transferencia">Transferência (vai pra outra conta/investimento sua)</option>
               </select>
             </div>
             <div>
-              <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Conta</label>
+              <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>
+                {form.tipo === "transferencia" ? "Conta origem" : "Conta"}
+              </label>
               <select
                 className="w-full rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-400"
                 style={{ background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" }}
@@ -301,6 +311,35 @@ export default function RecorrentesPage() {
                 {contas.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
               </select>
             </div>
+            {form.tipo === "transferencia" ? (
+              <div>
+                <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Conta destino</label>
+                <select
+                  className="w-full rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-400"
+                  style={{ background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" }}
+                  value={form.conta_destino_id}
+                  onChange={e => setForm(f => ({ ...f, conta_destino_id: e.target.value }))}
+                >
+                  <option value="">— sem conta destino —</option>
+                  {contas.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                </select>
+              </div>
+            ) : (
+              <div>
+                <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Tipo de despesa</label>
+                <select
+                  className="w-full rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-400"
+                  style={{ background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" }}
+                  value={form.tipo_despesa}
+                  onChange={e => setForm(f => ({ ...f, tipo_despesa: e.target.value }))}
+                >
+                  <option value="">— sem tipo —</option>
+                  {Object.entries(TIPO_DESPESA_LABEL).map(([k, v]) => (
+                    <option key={k} value={k}>{v}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             <div className="col-span-2">
               <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Observação</label>
               <input
@@ -349,7 +388,12 @@ export default function RecorrentesPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-medium text-sm" style={{ color: "var(--text)" }}>{r.descricao}</span>
-                  {r.tipo_despesa && (
+                  {r.tipo === "transferencia" ? (
+                    <span className="px-1.5 py-0.5 rounded text-xs font-medium"
+                      style={{ background: "#0ea5e922", color: "#0ea5e9" }}>
+                      Transferência
+                    </span>
+                  ) : r.tipo_despesa && (
                     <span className="px-1.5 py-0.5 rounded text-xs font-medium"
                       style={{
                         background: (TIPO_DESPESA_COR[r.tipo_despesa] ?? "#64748b") + "22",
@@ -365,12 +409,19 @@ export default function RecorrentesPage() {
                     <span className="flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full" style={{ background: r.conta_cor ?? "#64748b" }} />
                       {r.conta_nome}
+                      {r.tipo === "transferencia" && r.conta_destino_nome && (
+                        <>
+                          {" → "}
+                          <span className="w-1.5 h-1.5 rounded-full" style={{ background: r.conta_destino_cor ?? "#64748b" }} />
+                          {r.conta_destino_nome}
+                        </>
+                      )}
                     </span>
                   )}
                   {r.observacao && <span className="truncate max-w-xs">{r.observacao}</span>}
                 </div>
               </div>
-              <span className="font-semibold text-sm shrink-0" style={{ color: "#ef4444" }}>
+              <span className="font-semibold text-sm shrink-0" style={{ color: r.tipo === "transferencia" ? "#0ea5e9" : "#ef4444" }}>
                 R$ {fmt(r.valor_padrao)}
               </span>
               <button

@@ -99,11 +99,16 @@ interface Item {
   data_pagamento: string | null;
   valor_pago: number | null;
   conta_paga_nome: string | null;
+  tipo: "despesa" | "transferencia";
+  conta_destino_id: number | null;
+  conta_destino_nome: string | null;
+  conta_destino_cor: string | null;
 }
 interface Conta { id: number; nome: string; cor: string; saldo_atual: number; fluxo_caixa: boolean; }
 type EditForm = {
   descricao: string; valor: string; tipo_despesa: string;
   data_vencimento: string; conta_id: string; observacao: string; recorrente: boolean;
+  tipo: "despesa" | "transferencia"; conta_destino_id: string;
 };
 
 const inputSty = {
@@ -274,6 +279,8 @@ const CardItem = memo(function CardItem({ item, contas, mes, ano, onPagar, onSal
     conta_id: String(item.conta_id ?? ""),
     observacao: item.observacao ?? "",
     recorrente: item.recorrente ?? true,
+    tipo: item.tipo ?? "despesa",
+    conta_destino_id: String(item.conta_destino_id ?? ""),
   });
   const [valorPgto, setValorPgto] = useState(String(item.valor));
   const [contaPgto, setContaPgto] = useState(String(item.conta_id ?? ""));
@@ -286,6 +293,8 @@ const CardItem = memo(function CardItem({ item, contas, mes, ano, onPagar, onSal
       data_vencimento: isoParaBR(item.data_vencimento),
       conta_id: String(item.conta_id ?? ""), observacao: item.observacao ?? "",
       recorrente: item.recorrente ?? true,
+      tipo: item.tipo ?? "despesa",
+      conta_destino_id: String(item.conta_destino_id ?? ""),
     });
     setValorPgto(String(item.valor));
     setContaPgto(String(item.conta_id ?? ""));
@@ -322,15 +331,34 @@ const CardItem = memo(function CardItem({ item, contas, mes, ano, onPagar, onSal
               onChange={v => setForm(f => ({ ...f, data_vencimento: v }))} />
           </div>
           <div>
-            <p className="text-xs mb-0.5" style={{ color: "var(--text-muted)" }}>Tipo</p>
-            <select style={inputSty} value={form.tipo_despesa}
-              onChange={e => setForm(f => ({ ...f, tipo_despesa: e.target.value }))}>
-              <option value="">—</option>
-              {Object.entries(TIPO_DESPESA_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            <p className="text-xs mb-0.5" style={{ color: "var(--text-muted)" }}>Natureza</p>
+            <select style={inputSty} value={form.tipo}
+              onChange={e => setForm(f => ({ ...f, tipo: e.target.value as "despesa" | "transferencia" }))}>
+              <option value="despesa">Despesa</option>
+              <option value="transferencia">Transferência</option>
             </select>
           </div>
+          {form.tipo === "transferencia" ? (
+            <div>
+              <p className="text-xs mb-0.5" style={{ color: "var(--text-muted)" }}>Conta destino</p>
+              <select style={inputSty} value={form.conta_destino_id}
+                onChange={e => setForm(f => ({ ...f, conta_destino_id: e.target.value }))}>
+                <option value="">—</option>
+                {contas.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+              </select>
+            </div>
+          ) : (
+            <div>
+              <p className="text-xs mb-0.5" style={{ color: "var(--text-muted)" }}>Tipo</p>
+              <select style={inputSty} value={form.tipo_despesa}
+                onChange={e => setForm(f => ({ ...f, tipo_despesa: e.target.value }))}>
+                <option value="">—</option>
+                {Object.entries(TIPO_DESPESA_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
+            </div>
+          )}
           <div>
-            <p className="text-xs mb-0.5" style={{ color: "var(--text-muted)" }}>Conta padrão</p>
+            <p className="text-xs mb-0.5" style={{ color: "var(--text-muted)" }}>Conta {form.tipo === "transferencia" ? "origem" : "padrão"}</p>
             <select style={inputSty} value={form.conta_id}
               onChange={e => setForm(f => ({ ...f, conta_id: e.target.value }))}>
               <option value="">—</option>
@@ -396,7 +424,11 @@ const CardItem = memo(function CardItem({ item, contas, mes, ano, onPagar, onSal
 
         {/* Tipo */}
         <td className="px-4 py-3">
-          {label && <span className="px-2 py-0.5 rounded text-xs font-medium"
+          {item.tipo === "transferencia" ? (
+            <span className="px-2 py-0.5 rounded text-xs font-medium" style={{ background: "#0ea5e922", color: "#0ea5e9" }}>
+              Transferência
+            </span>
+          ) : label && <span className="px-2 py-0.5 rounded text-xs font-medium"
             style={{ background: cor + "22", color: cor }}>{label}</span>}
         </td>
 
@@ -406,13 +438,18 @@ const CardItem = memo(function CardItem({ item, contas, mes, ano, onPagar, onSal
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full" style={{ background: item.conta_cor ?? "#64748b" }} />
               <span className="text-xs" style={{ color: "var(--text-muted)" }}>{item.conta_nome}</span>
+              {item.tipo === "transferencia" && item.conta_destino_nome && (
+                <span className="text-xs" style={{ color: "var(--text-muted)" }}>
+                  {" → "}{item.conta_destino_nome}
+                </span>
+              )}
             </div>
           )}
         </td>
 
         {/* Valor */}
         <td className="px-4 py-3 text-right">
-          <p className="font-semibold text-sm" style={{ color: pago ? "#22c55e" : "#ef4444" }}>
+          <p className="font-semibold text-sm" style={{ color: pago ? "#22c55e" : item.tipo === "transferencia" ? "#0ea5e9" : "#ef4444" }}>
             R$ {fmt(pago && item.valor_pago ? item.valor_pago : item.valor)}
           </p>
         </td>
@@ -532,6 +569,7 @@ export default function PagamentosPage() {
   const [novoForm, setNovoForm] = useState<EditForm>({
     descricao: "", valor: "", tipo_despesa: "",
     data_vencimento: "", conta_id: "", observacao: "", recorrente: true,
+    tipo: "despesa", conta_destino_id: "",
   });
 
   const carregar = useCallback(async (m: number, a: number) => {
@@ -576,10 +614,12 @@ export default function PagamentosPage() {
       body: JSON.stringify({
         descricao: f.descricao,
         valor: parseBR(f.valor),
-        tipo_despesa: f.tipo_despesa || null,
+        tipo_despesa: f.tipo === "transferencia" ? null : (f.tipo_despesa || null),
         data_vencimento: parseDateBR(f.data_vencimento),
         conta_id: f.conta_id ? parseInt(f.conta_id) : null,
         observacao: f.observacao || null,
+        tipo: f.tipo,
+        conta_destino_id: f.tipo === "transferencia" && f.conta_destino_id ? parseInt(f.conta_destino_id) : null,
       }),
     });
     if (!res.ok) { const e = await res.json(); alert("Erro: " + e.error); return; }
@@ -614,16 +654,18 @@ export default function PagamentosPage() {
       body: JSON.stringify({
         descricao: novoForm.descricao,
         valor: parseBR(novoForm.valor),
-        tipo_despesa: novoForm.tipo_despesa || null,
+        tipo_despesa: novoForm.tipo === "transferencia" ? null : (novoForm.tipo_despesa || null),
         data_vencimento: parseDateBR(novoForm.data_vencimento),
         conta_id: novoForm.conta_id ? parseInt(novoForm.conta_id) : null,
         observacao: novoForm.observacao || null,
         recorrente: novoForm.recorrente ?? true,
+        tipo: novoForm.tipo,
+        conta_destino_id: novoForm.tipo === "transferencia" && novoForm.conta_destino_id ? parseInt(novoForm.conta_destino_id) : null,
       }),
     });
     setSalvando(false);
     if (!res.ok) { const e = await res.json(); alert("Erro: " + e.error); return; }
-    setNovoForm({ descricao: "", valor: "", tipo_despesa: "", data_vencimento: "", conta_id: "", observacao: "", recorrente: true });
+    setNovoForm({ descricao: "", valor: "", tipo_despesa: "", data_vencimento: "", conta_id: "", observacao: "", recorrente: true, tipo: "despesa", conta_destino_id: "" });
     setMostraForm(false);
     carregar(mes, ano);
   };
@@ -755,16 +797,37 @@ export default function PagamentosPage() {
                 inputStyle={{ background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)", borderRadius: 8, padding: "8px 28px 8px 12px", fontSize: 14, width: "100%" }} />
             </div>
             <div>
-              <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Tipo</label>
+              <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Natureza</label>
               <select className="w-full rounded-lg px-3 py-2 text-sm outline-none"
                 style={{ background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" }}
-                value={novoForm.tipo_despesa} onChange={e => setNovoForm(f => ({ ...f, tipo_despesa: e.target.value }))}>
-                <option value="">—</option>
-                {Object.entries(TIPO_DESPESA_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                value={novoForm.tipo} onChange={e => setNovoForm(f => ({ ...f, tipo: e.target.value as "despesa" | "transferencia" }))}>
+                <option value="despesa">Despesa</option>
+                <option value="transferencia">Transferência</option>
               </select>
             </div>
+            {novoForm.tipo === "transferencia" ? (
+              <div>
+                <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Conta destino</label>
+                <select className="w-full rounded-lg px-3 py-2 text-sm outline-none"
+                  style={{ background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" }}
+                  value={novoForm.conta_destino_id} onChange={e => setNovoForm(f => ({ ...f, conta_destino_id: e.target.value }))}>
+                  <option value="">—</option>
+                  {contas.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                </select>
+              </div>
+            ) : (
+              <div>
+                <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Tipo</label>
+                <select className="w-full rounded-lg px-3 py-2 text-sm outline-none"
+                  style={{ background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" }}
+                  value={novoForm.tipo_despesa} onChange={e => setNovoForm(f => ({ ...f, tipo_despesa: e.target.value }))}>
+                  <option value="">—</option>
+                  {Object.entries(TIPO_DESPESA_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                </select>
+              </div>
+            )}
             <div>
-              <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Conta padrão</label>
+              <label className="text-xs mb-1 block" style={{ color: "var(--text-muted)" }}>Conta {novoForm.tipo === "transferencia" ? "origem" : "padrão"}</label>
               <select className="w-full rounded-lg px-3 py-2 text-sm outline-none"
                 style={{ background: "var(--surface2)", border: "1px solid var(--border)", color: "var(--text)" }}
                 value={novoForm.conta_id} onChange={e => setNovoForm(f => ({ ...f, conta_id: e.target.value }))}>

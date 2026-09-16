@@ -14,6 +14,7 @@ export async function POST(
     const [rec] = await query<{
       descricao: string; tipo_despesa: string; valor_padrao: string;
       conta_id: number; observacao: string; data_vencimento: string | null;
+      tipo: string; conta_destino_id: number | null;
     }>(`SELECT *, to_char(data_vencimento, 'YYYY-MM-DD') AS data_vencimento FROM privado.recorrentes WHERE id = $1`, [id]);
 
     if (!rec) return NextResponse.json({ error: "Não encontrado" }, { status: 404 });
@@ -33,14 +34,16 @@ export async function POST(
 
     await query(`
       INSERT INTO privado.transacoes
-        (tipo, descricao, tipo_despesa, valor, data_pagamento, conta_id, observacao, recorrente_id)
-      VALUES ('despesa', $1, $2::privado.tipo_despesa_enum, $3, $4, $5, $6, $7)
+        (tipo, descricao, tipo_despesa, valor, data_pagamento, conta_id, conta_destino_id, observacao, recorrente_id)
+      VALUES ($1, $2, $3::privado.tipo_despesa_enum, $4, $5, $6, $7, $8, $9)
     `, [
+      rec.tipo || 'despesa',
       rec.descricao,
       rec.tipo_despesa || null,
       valor ?? rec.valor_padrao,
       hoje,
       conta_id ?? rec.conta_id,
+      rec.conta_destino_id ?? null,
       rec.observacao || null,
       id,
     ]);

@@ -17,14 +17,19 @@ export async function GET(req: NextRequest) {
         r.recorrente,
         r.conta_id,
         r.observacao,
+        r.tipo,
+        r.conta_destino_id,
         c.nome              AS conta_nome,
         c.cor               AS conta_cor,
+        cd.nome             AS conta_destino_nome,
+        cd.cor              AS conta_destino_cor,
         t.id                AS transacao_id,
         t.data_pagamento,
         t.valor             AS valor_pago,
         cp.nome             AS conta_paga_nome
       FROM privado.recorrentes r
       LEFT JOIN privado.contas c  ON c.id = r.conta_id
+      LEFT JOIN privado.contas cd ON cd.id = r.conta_destino_id
       LEFT JOIN privado.transacoes t
              ON t.recorrente_id = r.id
             AND t.data_pagamento IS NOT NULL
@@ -44,13 +49,13 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { descricao, valor, tipo_despesa, data_vencimento, conta_id, observacao, recorrente } = body;
+  const { descricao, valor, tipo_despesa, data_vencimento, conta_id, observacao, recorrente, tipo, conta_destino_id } = body;
 
   try {
     const [row] = await query(`
       INSERT INTO privado.recorrentes
-        (descricao, tipo_despesa, valor_padrao, data_vencimento, conta_id, observacao, recorrente)
-      VALUES ($1, $2, $3, $4, $5, $6, $7)
+        (descricao, tipo_despesa, valor_padrao, data_vencimento, conta_id, observacao, recorrente, tipo, conta_destino_id)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, COALESCE($8, 'despesa'), $9)
       RETURNING *
     `, [
       descricao,
@@ -60,6 +65,8 @@ export async function POST(req: NextRequest) {
       conta_id || null,
       observacao || null,
       recorrente ?? true,
+      tipo || null,
+      conta_destino_id || null,
     ]);
     return NextResponse.json(row, { status: 201 });
   } catch (e) {

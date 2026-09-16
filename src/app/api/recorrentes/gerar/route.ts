@@ -33,14 +33,16 @@ export async function POST(req: NextRequest) {
 
       await query(`
         INSERT INTO privado.transacoes
-          (tipo, descricao, tipo_despesa, valor, data_vencimento, conta_id, observacao, recorrente_id)
-        VALUES ('despesa', $1, $2, $3, $4, $5, $6, $7)
+          (tipo, descricao, tipo_despesa, valor, data_vencimento, conta_id, conta_destino_id, observacao, recorrente_id)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       `, [
+        r.tipo || 'despesa',
         r.descricao,
         r.tipo_despesa,
         r.valor_padrao,
         dataVenc,
         r.conta_id,
+        r.conta_destino_id ?? null,
         r.observacao,
         r.id,
       ]);
