@@ -9,22 +9,22 @@ export async function GET() {
       ORDER BY nome
     `);
 
-    // Total pago no mês — transações vinculadas a recorrentes pagas no mês atual
+    // Total pago no mês — todas as despesas pagas no mês atual (inclui lançamentos manuais sem recorrente_id)
     const [pagoMes] = await query<{ total: string }>(`
       SELECT COALESCE(SUM(t.valor), 0) AS total
       FROM privado.transacoes t
       WHERE t.tipo = 'despesa'
-        AND t.recorrente_id IS NOT NULL
         AND t.data_pagamento IS NOT NULL
         AND DATE_TRUNC('month', t.data_pagamento) = DATE_TRUNC('month', CURRENT_DATE)
     `);
 
     // Total pendente no mês — recorrentes ativos sem pagamento neste mês com vencimento no mês atual
+    // (considera também lançamentos manuais sem recorrente_id, casados pela descrição)
     const [pendente30] = await query<{ total: string }>(`
   SELECT COALESCE(SUM(r.valor_padrao), 0) AS total
   FROM privado.recorrentes r
-  LEFT JOIN privado.transacoes t 
-    ON t.recorrente_id = r.id 
+  LEFT JOIN privado.transacoes t
+    ON (t.recorrente_id = r.id OR (t.recorrente_id IS NULL AND t.descricao = r.descricao))
     AND DATE_TRUNC('month', t.data_pagamento) = DATE_TRUNC('month', CURRENT_DATE)
   WHERE r.ativo = TRUE
     AND DATE_TRUNC('month', r.data_vencimento) = DATE_TRUNC('month', CURRENT_DATE)

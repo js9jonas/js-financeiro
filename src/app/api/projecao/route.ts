@@ -76,8 +76,8 @@ export async function GET(req: NextRequest) {
     const [pendenteMesRow] = await query<{ total: string }>(`
   SELECT COALESCE(SUM(r.valor_padrao), 0) AS total
   FROM privado.recorrentes r
-  LEFT JOIN privado.transacoes t 
-    ON t.recorrente_id = r.id 
+  LEFT JOIN privado.transacoes t
+    ON (t.recorrente_id = r.id OR (t.recorrente_id IS NULL AND t.descricao = r.descricao))
     AND DATE_TRUNC('month', t.data_pagamento) = DATE_TRUNC('month', CURRENT_DATE)
   WHERE r.ativo = TRUE
     AND DATE_TRUNC('month', r.data_vencimento) = DATE_TRUNC('month', CURRENT_DATE)
