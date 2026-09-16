@@ -19,14 +19,14 @@ export async function POST(
 
     if (!rec) return NextResponse.json({ error: "Não encontrado" }, { status: 404 });
 
-    // Evita duplicata no mesmo mês
+    // Evita duplicata no mesmo mês (considera também lançamentos manuais sem recorrente_id, casados pela descrição)
     const [existente] = await query<{ id: number }>(`
       SELECT id FROM privado.transacoes
-      WHERE recorrente_id = $1
-        AND data_pagamento IS NOT NULL
+      WHERE data_pagamento IS NOT NULL
         AND EXTRACT(MONTH FROM data_pagamento) = $2
         AND EXTRACT(YEAR  FROM data_pagamento) = $3
-    `, [id, mes, ano]);
+        AND (recorrente_id = $1 OR (recorrente_id IS NULL AND descricao = $4))
+    `, [id, mes, ano, rec.descricao]);
 
     if (existente && !forcar) {
       return NextResponse.json({ error: "Já registrado neste mês" }, { status: 409 });

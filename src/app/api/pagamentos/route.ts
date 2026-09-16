@@ -32,15 +32,16 @@ export async function GET(req: NextRequest) {
       LEFT JOIN privado.contas c  ON c.id = r.conta_id
       LEFT JOIN privado.contas cd ON cd.id = r.conta_destino_id
       LEFT JOIN privado.transacoes t
-             ON t.recorrente_id = r.id
-            AND t.data_pagamento IS NOT NULL
+             ON t.data_pagamento IS NOT NULL
             AND EXTRACT(MONTH FROM t.data_pagamento) = $1
             AND EXTRACT(YEAR  FROM t.data_pagamento) = $2
+            AND (t.recorrente_id = r.id OR (t.recorrente_id IS NULL AND t.descricao = r.descricao))
       LEFT JOIN privado.contas cp ON cp.id = t.conta_id
       LEFT JOIN LATERAL (
         SELECT tp.data_pagamento
         FROM privado.transacoes tp
-        WHERE tp.recorrente_id = r.id AND tp.data_pagamento IS NOT NULL
+        WHERE tp.data_pagamento IS NOT NULL
+          AND (tp.recorrente_id = r.id OR (tp.recorrente_id IS NULL AND tp.descricao = r.descricao))
         ORDER BY tp.data_pagamento DESC
         LIMIT 1
       ) ult ON true
