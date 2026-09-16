@@ -15,6 +15,12 @@ function fmtData(d: string | null) {
   if (!d) return null;
   return new Date(String(d).split("T")[0] + "T12:00:00").toLocaleDateString("pt-BR");
 }
+function diasDesde(d: string): number {
+  const data = new Date(String(d).split("T")[0] + "T12:00:00");
+  const hoje = new Date();
+  hoje.setHours(12, 0, 0, 0);
+  return Math.round((hoje.getTime() - data.getTime()) / 86400000);
+}
 // Converte dd/mm/aaaa → aaaa-mm-dd para salvar
 function parseDateBR(v: string): string | null {
   if (!v) return null;
@@ -103,6 +109,7 @@ interface Item {
   conta_destino_id: number | null;
   conta_destino_nome: string | null;
   conta_destino_cor: string | null;
+  ultimo_pagamento_em: string | null;
 }
 interface Conta { id: number; nome: string; cor: string; saldo_atual: number; fluxo_caixa: boolean; }
 type EditForm = {
@@ -414,6 +421,11 @@ const CardItem = memo(function CardItem({ item, contas, mes, ano, onPagar, onSal
           {item.data_vencimento
             ? <span className="font-medium" style={{ color: "var(--text)" }}>{fmtData(item.data_vencimento)}</span>
             : <span style={{ color: "var(--text-muted)" }}>—</span>}
+          {item.ultimo_pagamento_em && (
+            <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+              Ult. há {diasDesde(item.ultimo_pagamento_em)} dias
+            </p>
+          )}
         </td>
 
         {/* Descrição */}

@@ -26,7 +26,8 @@ export async function GET(req: NextRequest) {
         t.id                AS transacao_id,
         t.data_pagamento,
         t.valor             AS valor_pago,
-        cp.nome             AS conta_paga_nome
+        cp.nome             AS conta_paga_nome,
+        ult.data_pagamento  AS ultimo_pagamento_em
       FROM privado.recorrentes r
       LEFT JOIN privado.contas c  ON c.id = r.conta_id
       LEFT JOIN privado.contas cd ON cd.id = r.conta_destino_id
@@ -36,6 +37,13 @@ export async function GET(req: NextRequest) {
             AND EXTRACT(MONTH FROM t.data_pagamento) = $1
             AND EXTRACT(YEAR  FROM t.data_pagamento) = $2
       LEFT JOIN privado.contas cp ON cp.id = t.conta_id
+      LEFT JOIN LATERAL (
+        SELECT tp.data_pagamento
+        FROM privado.transacoes tp
+        WHERE tp.recorrente_id = r.id AND tp.data_pagamento IS NOT NULL
+        ORDER BY tp.data_pagamento DESC
+        LIMIT 1
+      ) ult ON true
       WHERE r.ativo = TRUE
       ORDER BY r.data_vencimento ASC NULLS LAST, r.descricao
     `, [mes, ano]);
