@@ -417,7 +417,7 @@ const CardItem = memo(function CardItem({ item, contas, mes, ano, onPagar, onSal
         </td>
 
         {/* Vencimento */}
-        <td className="px-4 py-3 text-sm" style={{ minWidth: 90 }}>
+        <td className="px-4 py-3 text-sm" style={{ minWidth: 130, whiteSpace: "nowrap" }}>
           {item.data_vencimento
             ? <span className="font-medium" style={{ color: "var(--text)" }}>{fmtData(item.data_vencimento)}</span>
             : <span style={{ color: "var(--text-muted)" }}>—</span>}
